@@ -24,15 +24,14 @@ async function uploadImages(
   const collectedUrls: string[] = []
 
   for (const file of files) {
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = new Uint8Array(arrayBuffer)
     const ext = file.name?.split(".").pop() || "bin"
     const path = `listings/${userId}/${randomUUID()}.${ext}`
 
     const { error: uploadError } = await supabase.storage
       .from("listing-images")
-      .upload(path, buffer, {
-        contentType: file.type,
+      .upload(path, Buffer.from(await file.arrayBuffer()), {
+        cacheControl: "3600",
+        contentType: file.type || "application/octet-stream",
       })
 
     if (uploadError) {
