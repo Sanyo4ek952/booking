@@ -16,31 +16,37 @@ async function uploadImages(
   userId: string,
   files: File[],
 ): Promise<{ urls: string[]; error?: string }> {
-  const uploadedUrls: string[] = []
+  try {
+    const collectedUrls: string[] = []
 
-  for (const file of files) {
-    const extension = file.name.split(".").pop() || "jpg"
-    const path = `listings/${userId}/${randomUUID()}.${extension}`
+    for (const file of files) {
+      const buffer = new Uint8Array(await file.arrayBuffer())
+      const ext = file.name?.split(".").pop() || "bin"
+      const path = `listings/${userId}/${randomUUID()}.${ext}`
 
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = new Uint8Array(arrayBuffer)
+      const { error: uploadError } = await supabase.storage
+        .from("listing-images")
+        .upload(path, buffer, { contentType: file.type || "application/octet-stream" })
 
-    const { error: uploadError } = await supabase.storage.from("listing-images").upload(path, buffer, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type || "application/octet-stream",
-    })
+      if (uploadError) {
+        console.error("Supabase storage upload error:", uploadError)
+        return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
+      }
 
-    if (uploadError) {
-      console.error("Supabase storage upload error:", uploadError)
-      return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
+      const { data: publicUrlData } = supabase.storage.from("listing-images").getPublicUrl(path)
+
+      if (!publicUrlData?.publicUrl) {
+        return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
+      }
+
+      collectedUrls.push(publicUrlData.publicUrl)
     }
 
-    const { data: publicData } = supabase.storage.from("listing-images").getPublicUrl(path)
-    uploadedUrls.push(publicData.publicUrl)
+    return { urls: collectedUrls }
+  } catch (error) {
+    console.error("Unexpected upload error:", error)
+    return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
   }
-
-  return { urls: uploadedUrls }
 }
 
 export async function createListingAction(_: ListingActionState, formData: FormData): Promise<ListingActionState> {
