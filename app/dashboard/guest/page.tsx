@@ -1,29 +1,24 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { ChevronLeft, Home, Heart, MessageSquare } from "lucide-react"
+import { getCurrentRole, getCurrentUser } from "@/lib/auth/server"
 
 export const metadata = {
   title: "Личный кабинет гостя | Судак Отдых",
 }
 
 export default async function GuestDashboardPage() {
-  const supabase = await createServerSupabaseClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
+  const role = await getCurrentRole()
 
   if (!user) {
     redirect("/auth/login")
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-  if (profile?.role !== "guest") {
-    redirect(`/dashboard/${profile?.role || "guest"}`)
+  if (role !== "guest") {
+    redirect(`/dashboard/${role ?? "guest"}`)
   }
 
   return (

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { CreateListingForm } from "@/components/listing-form/create-listing-form"
+import { getCurrentRole, getCurrentUser } from "@/lib/auth/server"
+
+export const dynamic = "force-dynamic"
 
 export const metadata = {
   title: "Создать объявление",
@@ -8,20 +10,15 @@ export const metadata = {
 }
 
 export default async function CreateListingPage() {
-  const supabase = await createServerSupabaseClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
+  const role = await getCurrentRole()
 
   if (!user) {
     redirect("/auth/login")
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-  if (profile?.role !== "host") {
-    redirect("/dashboard/guest")
+  if (role !== "host") {
+    redirect(`/dashboard/${role ?? "guest"}`)
   }
 
   return (

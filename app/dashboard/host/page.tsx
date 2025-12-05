@@ -1,29 +1,24 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { ChevronLeft, Plus, BarChart3, Users, Calendar } from "lucide-react"
+import { getCurrentRole, getCurrentUser } from "@/lib/auth/server"
 
 export const metadata = {
   title: "Личный кабинет хоста | Судак Отдых",
 }
 
 export default async function HostDashboardPage() {
-  const supabase = await createServerSupabaseClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
+  const role = await getCurrentRole()
 
   if (!user) {
     redirect("/auth/login")
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-  if (profile?.role !== "host") {
-    redirect(`/dashboard/${profile?.role || "guest"}`)
+  if (role !== "host") {
+    redirect(`/dashboard/${role ?? "guest"}`)
   }
 
   return (
@@ -53,10 +48,12 @@ export default async function HostDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-foreground/60 text-sm mb-4">Начните сдавать жильё и зарабатывайте</p>
-              <Button className="w-full bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Создать объявление
-              </Button>
+              <Link href="/listing/create">
+                <Button className="w-full bg-primary hover:bg-primary/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Создать объявление
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
