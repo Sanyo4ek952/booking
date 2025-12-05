@@ -2,12 +2,13 @@
 
 import { randomUUID } from "crypto"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
-import type { Amenity } from "@/lib/types/listing"
+import type { Amenity, ListingFormData } from "@/lib/types/listing"
 import { createListingSchema } from "@/lib/validations/listing"
 
 export interface ListingActionState {
   error: string
   message: string
+  formData?: ListingFormData
 }
 
 async function uploadImages(
@@ -21,10 +22,13 @@ async function uploadImages(
     const extension = file.name.split(".").pop() || "jpg"
     const path = `listings/${userId}/${randomUUID()}.${extension}`
 
-    const { error: uploadError } = await supabase.storage.from("listing-images").upload(path, file, {
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = new Uint8Array(arrayBuffer)
+
+    const { error: uploadError } = await supabase.storage.from("listing-images").upload(path, buffer, {
       cacheControl: "3600",
       upsert: false,
-      contentType: file.type || undefined,
+      contentType: file.type || "application/octet-stream",
     })
 
     if (uploadError) {
@@ -40,6 +44,19 @@ async function uploadImages(
 }
 
 export async function createListingAction(_: ListingActionState, formData: FormData): Promise<ListingActionState> {
+  const filledForm: ListingFormData = {
+    title: String(formData.get("title") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim(),
+    price: Number(formData.get("price") ?? 0),
+    address: String(formData.get("address") ?? "").trim(),
+    city: String(formData.get("city") ?? "").trim(),
+    type: String(formData.get("type") ?? ""),
+    guests: Number(formData.get("guests") ?? 0),
+    bedrooms: Number(formData.get("bedrooms") ?? 0),
+    bathrooms: Number(formData.get("bathrooms") ?? 0),
+    amenities: formData.getAll("amenities").map((value) => String(value)) as Amenity[],
+  }
+
   try {
     const supabase = await createServerSupabaseClient()
     const {
@@ -48,7 +65,7 @@ export async function createListingAction(_: ListingActionState, formData: FormD
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return { error: "Необходима авторизация", message: "" }
+      return { error: "Необходима авторизация", message: "", formData: filledForm }
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -59,31 +76,18 @@ export async function createListingAction(_: ListingActionState, formData: FormD
 
     if (profileError) {
       console.error("Failed to load user role:", profileError)
-      return { error: "Не удалось получить данные профиля", message: "" }
+      return { error: "Не удалось получить данные профиля", message: "", formData: filledForm }
     }
 
     if (profile?.role !== "host") {
-      return { error: "Только хост может размещать объявления", message: "" }
+      return { error: "Только хост может размещать объявления", message: "", formData: filledForm }
     }
 
-    const amenities = formData.getAll("amenities").map((value) => String(value)) as Amenity[]
-
-    const parsed = createListingSchema.safeParse({
-      title: String(formData.get("title") ?? "").trim(),
-      description: String(formData.get("description") ?? "").trim(),
-      price: Number(formData.get("price") ?? 0),
-      address: String(formData.get("address") ?? "").trim(),
-      city: String(formData.get("city") ?? "").trim(),
-      type: String(formData.get("type") ?? ""),
-      guests: Number(formData.get("guests") ?? 0),
-      bedrooms: Number(formData.get("bedrooms") ?? 0),
-      bathrooms: Number(formData.get("bathrooms") ?? 0),
-      amenities,
-    })
+    const parsed = createListingSchema.safeParse(filledForm)
 
     if (!parsed.success) {
       const issue = parsed.error.issues[0]
-      return { error: issue?.message || "Проверьте корректность данных", message: "" }
+      return { error: issue?.message || "Проверьте корректность данных", message: "", formData: filledForm }
     }
 
     const imageFiles = formData
@@ -91,13 +95,13 @@ export async function createListingAction(_: ListingActionState, formData: FormD
       .filter((file): file is File => file instanceof File && file.size > 0)
 
     if (imageFiles.length === 0) {
-      return { error: "Загрузите хотя бы одно фото", message: "" }
+      return { error: "Загрузите хотя бы одно фото", message: "", formData: filledForm }
     }
 
     const { urls, error: uploadError } = await uploadImages(supabase, user.id, imageFiles)
 
     if (uploadError) {
-      return { error: uploadError, message: "" }
+      return { error: uploadError, message: "", formData: filledForm }
     }
 
     const { error: insertError } = await supabase.from("listings").insert({
@@ -117,12 +121,20 @@ export async function createListingAction(_: ListingActionState, formData: FormD
 
     if (insertError) {
       console.error("Supabase insert error:", insertError)
-      return { error: "Что-то пошло не так при создании объявления. Попробуйте позже.", message: "" }
+      return {
+        error: "Что-то пошло не так. Проверьте введённые данные.",
+        message: "",
+        formData: filledForm,
+      }
     }
 
-    return { error: "", message: "Объявление успешно создано" }
+    return { error: "", message: "Объявление создано" }
   } catch (error) {
     console.error("createListingAction error:", error)
-    return { error: "Что-то пошло не так при создании объявления. Попробуйте позже.", message: "" }
+    return {
+      error: "Что-то пошло не так. Проверьте введённые данные.",
+      message: "",
+      formData: filledForm,
+    }
   }
 }

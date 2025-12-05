@@ -1,8 +1,8 @@
-import { Star, MapPin, Users, Bed, Bath } from "lucide-react"
-import type { properties } from "@/lib/properties"
+import { MapPin, Users, Bed, Bath } from "lucide-react"
+import type { Listing } from "@/lib/types/listing"
 
 interface PropertyInfoProps {
-  property: (typeof properties)[0]
+  property: Listing
 }
 
 export function PropertyInfo({ property }: PropertyInfoProps) {
@@ -13,12 +13,9 @@ export function PropertyInfo({ property }: PropertyInfoProps) {
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-accent" />
-            <span className="text-foreground/70">{property.location}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Star className="w-5 h-5 fill-accent text-accent" />
-            <span className="font-semibold">{property.rating}</span>
-            <span className="text-foreground/60">({property.reviews} отзывов)</span>
+            <span className="text-foreground/70">
+              {property.city}, {property.address}
+            </span>
           </div>
         </div>
       </div>

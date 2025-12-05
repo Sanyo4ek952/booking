@@ -21,6 +21,7 @@ const AMENITIES: { value: Amenity; label: string }[] = [
 const initialState: ListingActionState = {
   error: "",
   message: "",
+  formData: undefined,
 }
 
 function SubmitButton() {
@@ -54,7 +55,13 @@ export function CreateListingForm() {
         <label className="block text-sm font-medium mb-2" htmlFor="title">
           Название
         </label>
-        <Input id="title" name="title" placeholder="Красивая вилла с видом на море" required />
+        <Input
+          id="title"
+          name="title"
+          placeholder="Красивая вилла с видом на море"
+          defaultValue={state.formData?.title ?? ""}
+          required
+        />
       </div>
 
       <div>
@@ -66,6 +73,7 @@ export function CreateListingForm() {
           name="description"
           placeholder="Подробное описание вашего жилья..."
           rows={5}
+          defaultValue={state.formData?.description ?? ""}
           required
         />
       </div>
@@ -75,35 +83,56 @@ export function CreateListingForm() {
           <label className="block text-sm font-medium mb-2" htmlFor="price">
             Цена за ночь (₽)
           </label>
-          <Input id="price" name="price" type="number" min="1" step="0.01" placeholder="5000" required />
-        </div>
+          <Input
+            id="price"
+            name="price"
+            type="number"
+            min="1"
+            step="0.01"
+            placeholder="5000"
+            defaultValue={state.formData?.price ?? ""}
+            required
+          />
+      </div>
 
         <div>
           <label className="block text-sm font-medium mb-2" htmlFor="type">
             Тип жилья
           </label>
-          <select id="type" name="type" className="w-full px-3 py-2 border rounded-lg" required>
+          <select
+            id="type"
+            name="type"
+            className="w-full px-3 py-2 border rounded-lg"
+            defaultValue={state.formData?.type ?? ""}
+            required
+          >
             <option value="">Выберите тип</option>
             <option value="apartment">Апартамент</option>
             <option value="house">Дом</option>
             <option value="room">Комната</option>
             <option value="villa">Вилла</option>
           </select>
-        </div>
       </div>
+    </div>
 
       <div>
         <label className="block text-sm font-medium mb-2" htmlFor="address">
           Адрес
         </label>
-        <Input id="address" name="address" placeholder="ул. Пляжная, дом 10" required />
+        <Input
+          id="address"
+          name="address"
+          placeholder="ул. Пляжная, дом 10"
+          defaultValue={state.formData?.address ?? ""}
+          required
+        />
       </div>
 
       <div>
         <label className="block text-sm font-medium mb-2" htmlFor="city">
           Город
         </label>
-        <Input id="city" name="city" placeholder="Судак" required />
+        <Input id="city" name="city" placeholder="Судак" defaultValue={state.formData?.city ?? ""} required />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -111,21 +140,45 @@ export function CreateListingForm() {
           <label className="block text-sm font-medium mb-2" htmlFor="guests">
             Гости
           </label>
-          <Input id="guests" name="guests" type="number" min="1" placeholder="4" required />
+          <Input
+            id="guests"
+            name="guests"
+            type="number"
+            min="1"
+            placeholder="4"
+            defaultValue={state.formData?.guests ?? ""}
+            required
+          />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-2" htmlFor="bedrooms">
             Спальни
           </label>
-          <Input id="bedrooms" name="bedrooms" type="number" min="1" placeholder="2" required />
+          <Input
+            id="bedrooms"
+            name="bedrooms"
+            type="number"
+            min="1"
+            placeholder="2"
+            defaultValue={state.formData?.bedrooms ?? ""}
+            required
+          />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-2" htmlFor="bathrooms">
             Ванные
           </label>
-          <Input id="bathrooms" name="bathrooms" type="number" min="1" placeholder="1" required />
+          <Input
+            id="bathrooms"
+            name="bathrooms"
+            type="number"
+            min="1"
+            placeholder="1"
+            defaultValue={state.formData?.bathrooms ?? ""}
+            required
+          />
         </div>
       </div>
 
@@ -142,7 +195,13 @@ export function CreateListingForm() {
         <div className="grid grid-cols-2 gap-3">
           {AMENITIES.map((amenity) => (
             <label key={amenity.value} className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="amenities" value={amenity.value} className="w-4 h-4 rounded border-gray-300" />
+              <input
+                type="checkbox"
+                name="amenities"
+                value={amenity.value}
+                className="w-4 h-4 rounded border-gray-300"
+                defaultChecked={state.formData?.amenities?.includes(amenity.value)}
+              />
               <span className="text-sm">{amenity.label}</span>
             </label>
           ))}
