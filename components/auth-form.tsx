@@ -1,6 +1,7 @@
 "use client"
 
-import { useFormState, useFormStatus } from "react-dom"
+import { useActionState } from "react"
+import { useFormStatus } from "react-dom"
 import { signInAction, signInWithOAuthAction, signUpAction } from "@/lib/auth/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,9 +13,9 @@ interface AuthFormProps {
 }
 
 const initialState = {
-  error: "",
-  message: "",
-}
+  error: undefined,
+  message: undefined,
+} satisfies { error?: string; message?: string }
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus()
@@ -28,7 +29,11 @@ function SubmitButton({ label }: { label: string }) {
 
 export function AuthForm({ type }: AuthFormProps) {
   const action = type === "signup" ? signUpAction : signInAction
-  const [state, formAction] = useFormState(action, initialState)
+  const [state, formAction] = useActionState(action, initialState)
+  const [oauthState, oauthAction] = useActionState(signInWithOAuthAction, initialState)
+
+  const error = state.error ?? oauthState.error
+  const message = state.message ?? oauthState.message
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -70,15 +75,16 @@ export function AuthForm({ type }: AuthFormProps) {
             </div>
           )}
 
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-          {state?.message && <p className="text-sm text-muted-foreground">{state.message}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          {message && <p className="text-sm text-muted-foreground">{message}</p>}
 
           <SubmitButton label={type === "login" ? "Вход" : "Регистрация"} />
         </form>
 
         <div className="my-6">
           <Separator className="my-4" />
-          <form action={signInWithOAuthAction.bind(null, "github")} className="space-y-3">
+          <form action={oauthAction} className="space-y-3">
+            <input type="hidden" name="provider" value="github" />
             <Button type="submit" variant="outline" className="w-full">
               Войти через GitHub
             </Button>
