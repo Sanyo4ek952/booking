@@ -1,34 +1,61 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import type { Role } from "@/lib/types/role"
 import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 
-export function useUserSession() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+interface UseUserResult {
+  user: User | null
+  role: Role | null
+  isLoading: boolean
+}
 
-  useEffect(() => {
-    const supabase = createClient()
+async function fetchUserWithRole() {
+  try {
+    const response = await fetch("/api/auth/me", {
+      credentials: "include",
+      cache: "no-store",
+    })
 
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
+    if (!response.ok) {
+      throw new Error("Failed to fetch user")
     }
 
-    getUser()
+    const payload = (await response.json()) as { user: User | null; role: Role | null }
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+    return payload
+  } catch (error) {
+    console.error("useUser fetch error:", error)
+    return { user: null, role: null }
+  }
+}
+
+export function useUser(): UseUserResult {
+  const [user, setUser] = useState<User | null>(null)
+  const [role, setRole] = useState<Role | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClient()
+
+  const loadUser = useCallback(async () => {
+    setIsLoading(true)
+    const payload = await fetchUserWithRole()
+    setUser(payload.user)
+    setRole(payload.role)
+    setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    loadUser()
+
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      loadUser()
     })
 
     return () => {
       listener?.subscription.unsubscribe()
     }
-  }, [])
+  }, [loadUser, supabase])
 
-  return { user, isAuthenticated: Boolean(user), loading }
+  return { user, role, isLoading }
 }
