@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { Role, UserProfile } from "@/lib/types/role"
+import { useUserSession } from "@/hooks/use-user"
 
 interface UseRoleResult {
   user: any | null
@@ -17,7 +18,7 @@ interface UseRoleResult {
 export function useRole(): UseRoleResult {
   const [role, setRole] = useState<Role | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [user, setUser] = useState<any | null>(null)
+  const { user, loading: userLoading } = useUserSession()
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
 
@@ -26,19 +27,12 @@ export function useRole(): UseRoleResult {
       try {
         const supabase = createClient()
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
         if (!user) {
-          setUser(null)
           setRole(null)
           setProfile(null)
           setIsLoading(false)
           return
         }
-
-        setUser(user)
 
         const { data: profileData, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
@@ -58,7 +52,7 @@ export function useRole(): UseRoleResult {
     }
 
     fetchUserRole()
-  }, [])
+  }, [user?.id])
 
   return {
     user,
@@ -66,7 +60,7 @@ export function useRole(): UseRoleResult {
     profile,
     isGuest: role === "guest",
     isHost: role === "host",
-    isLoading,
+    isLoading: isLoading || userLoading,
     isError,
   }
 }

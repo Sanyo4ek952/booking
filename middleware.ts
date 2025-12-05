@@ -1,59 +1,80 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createServerClient } from "@supabase/ssr"
+import type { Role } from "@/lib/types/role"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+function createMiddlewareClient(request: NextRequest, response: NextResponse) {
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name) {
+        return request.cookies.get(name)?.value
+      },
+      set(name, value, options) {
+        response.cookies.set({ name, value, ...options })
+      },
+      remove(name, options) {
+        response.cookies.set({
+          name,
+          value: "",
+          ...options,
+          maxAge: 0,
+        })
+      },
+    },
+  })
+}
 
 export async function middleware(request: NextRequest) {
   const supabaseResponse = NextResponse.next({
-    request,
+    request: {
+      headers: request.headers,
+    },
   })
-
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  const supabase = createMiddlewareClient(request, supabaseResponse)
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (request.nextUrl.pathname.startsWith("/listing/create")) {
-    if (!user) {
-      return NextResponse.redirect(new URL("/auth/login", request.url))
-    }
+  const pathname = request.nextUrl.pathname
+  const isDashboard = pathname.startsWith("/dashboard")
+  const isAuthPage = pathname.startsWith("/auth")
+  const isListingCreate = pathname.startsWith("/listing/create")
 
+  let role: Role | null = null
+
+  if (user) {
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    if (profile?.role !== "host") {
-      return NextResponse.redirect(new URL("/dashboard/guest", request.url))
-    }
+    role = (profile?.role as Role | null) || null
   }
 
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (!user && (isDashboard || isListingCreate)) {
     return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
-  if (user && (request.nextUrl.pathname === "/auth/login" || request.nextUrl.pathname === "/auth/signup")) {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    const role = profile?.role || "guest"
-
-    if (profile) {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
-    }
+  if (user && isAuthPage) {
+    return NextResponse.redirect(new URL(`/dashboard/${role ?? "guest"}`, request.url))
   }
 
-  if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  if (user && isListingCreate && role !== "host") {
+    return NextResponse.redirect(new URL(`/dashboard/${role ?? "guest"}`, request.url))
+  }
 
-    const role = profile?.role || "guest"
-    const pathname = request.nextUrl.pathname
-
-    if (profile && pathname.startsWith("/dashboard/guest") && role !== "guest") {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
-    }
-
-    if (profile && pathname.startsWith("/dashboard/host") && role !== "host") {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
-    }
+  if (user && isDashboard) {
+    const destination = `/dashboard/${role ?? "guest"}`
 
     if (pathname === "/dashboard" || pathname === "/dashboard/") {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url))
+      return NextResponse.redirect(new URL(destination, request.url))
+    }
+
+    if (pathname.startsWith("/dashboard/guest") && role !== "guest") {
+      return NextResponse.redirect(new URL(destination, request.url))
+    }
+
+    if (pathname.startsWith("/dashboard/host") && role !== "host") {
+      return NextResponse.redirect(new URL(destination, request.url))
     }
   }
 
