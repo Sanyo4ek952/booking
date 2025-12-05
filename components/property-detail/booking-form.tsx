@@ -3,11 +3,11 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import type { properties } from "@/lib/properties"
 import { Calendar, UsersIcon } from "lucide-react"
+import type { Listing } from "@/lib/types/listing"
 
 interface BookingFormProps {
-  property: (typeof properties)[0]
+  property: Listing
 }
 
 export function BookingForm({ property }: BookingFormProps) {

@@ -17,7 +17,6 @@ export interface Listing {
   amenities: Amenity[]
   images: string[]
   created_at: string
-  updated_at: string
 }
 
 export interface CreateListingInput {
@@ -32,4 +31,17 @@ export interface CreateListingInput {
   bathrooms: number
   amenities: Amenity[]
   images: string[]
+}
+
+export interface ListingFormData {
+  title: string
+  description: string
+  price: number
+  address: string
+  city: string
+  type: ListingType
+  guests: number
+  bedrooms: number
+  bathrooms: number
+  amenities: Amenity[]
 }

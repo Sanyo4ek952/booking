@@ -5,12 +5,12 @@ CREATE TABLE IF NOT EXISTS public.listings (
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   price NUMERIC NOT NULL,
-  address TEXT,
-  city TEXT,
+  address TEXT NOT NULL,
+  city TEXT NOT NULL,
   type TEXT NOT NULL DEFAULT 'apartment' CHECK (type IN ('apartment', 'house', 'room', 'villa')),
-  guests INTEGER,
-  bedrooms INTEGER,
-  bathrooms INTEGER,
+  guests INTEGER NOT NULL,
+  bedrooms INTEGER NOT NULL,
+  bathrooms INTEGER NOT NULL,
   amenities JSONB DEFAULT '[]'::jsonb,
   images JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -25,9 +25,9 @@ CREATE INDEX IF NOT EXISTS idx_listings_created_at ON public.listings(created_at
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies
-CREATE POLICY "Authenticated users can read listings"
+CREATE POLICY "Everyone can read listings"
   ON public.listings FOR SELECT
-  USING (auth.role() = 'authenticated');
+  USING (true);
 
 CREATE POLICY "Hosts can create listings"
   ON public.listings FOR INSERT
