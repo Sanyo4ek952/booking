@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react"
 import { useFormStatus } from "react-dom"
+import Link from "next/link"
 import { createListingAction, type ListingActionState } from "@/lib/listings/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -212,6 +213,10 @@ export function CreateListingForm() {
       {state.message && <p className="text-sm text-green-600">{state.message}</p>}
 
       <SubmitButton />
+
+      <Link href="/" className="text-primary hover:underline block mt-4">
+        Вернуться на главную
+      </Link>
     </form>
   )
 }
