@@ -1,141 +1,158 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { createListingSchema, type CreateListingInput } from "@/lib/validations/listing"
+import { useActionState, useEffect, useRef } from "react"
+import { useFormStatus } from "react-dom"
+import { createListingAction, type ListingActionState } from "@/lib/listings/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ImageUpload } from "./image-upload"
-import { AmenitiesSelect } from "./amenities-select"
 import type { Amenity } from "@/lib/types/listing"
 
-export function CreateListingForm() {
-  const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [images, setImages] = useState<string[]>([])
-  const [amenities, setAmenities] = useState<Amenity[]>([])
+const AMENITIES: { value: Amenity; label: string }[] = [
+  { value: "wifi", label: "WiFi" },
+  { value: "kitchen", label: "Кухня" },
+  { value: "washing_machine", label: "Стиральная машина" },
+  { value: "air_conditioner", label: "Кондиционер" },
+  { value: "parking", label: "Парковка" },
+  { value: "pool", label: "Бассейн" },
+  { value: "tv", label: "Телевизор" },
+]
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<CreateListingInput>({
-    resolver: zodResolver(createListingSchema),
-  })
+const initialState: ListingActionState = {
+  error: "",
+  message: "",
+}
 
-  const onSubmit = async (data: CreateListingInput) => {
-    if (images.length === 0) {
-      alert("Загрузите хотя бы одно фото")
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      const response = await fetch("/api/listings/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          images,
-          amenities,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Ошибка создания объявления")
-      }
-
-      alert("Объявление успешно создано!")
-      reset()
-      setImages([])
-      setAmenities([])
-      router.push("/dashboard/host")
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "Ошибка")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+function SubmitButton() {
+  const { pending } = useFormStatus()
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+    <Button type="submit" disabled={pending} className="w-full">
+      {pending ? "Создание..." : "Создать объявление"}
+    </Button>
+  )
+}
+
+export function CreateListingForm() {
+  const [state, formAction] = useActionState(createListingAction, initialState)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useEffect(() => {
+    if (state.message && formRef.current) {
+      formRef.current.reset()
+    }
+  }, [state.message])
+
+  return (
+    <form
+      ref={formRef}
+      action={formAction}
+      className="space-y-6 max-w-2xl"
+      encType="multipart/form-data"
+    >
       <div>
-        <label className="block text-sm font-medium mb-2">Название</label>
-        <Input {...register("title")} placeholder="Красивая вилла с видом на море" />
-        {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>}
+        <label className="block text-sm font-medium mb-2" htmlFor="title">
+          Название
+        </label>
+        <Input id="title" name="title" placeholder="Красивая вилла с видом на море" required />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">Описание</label>
-        <Textarea {...register("description")} placeholder="Подробное описание вашего жилья..." rows={5} />
-        {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>}
+        <label className="block text-sm font-medium mb-2" htmlFor="description">
+          Описание
+        </label>
+        <Textarea
+          id="description"
+          name="description"
+          placeholder="Подробное описание вашего жилья..."
+          rows={5}
+          required
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Цена за ночь (₽)</label>
-          <Input {...register("price")} type="number" placeholder="5000" />
-          {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
+          <label className="block text-sm font-medium mb-2" htmlFor="price">
+            Цена за ночь (₽)
+          </label>
+          <Input id="price" name="price" type="number" min="1" step="0.01" placeholder="5000" required />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Тип жилья</label>
-          <select {...register("type")} className="w-full px-3 py-2 border rounded-lg">
+          <label className="block text-sm font-medium mb-2" htmlFor="type">
+            Тип жилья
+          </label>
+          <select id="type" name="type" className="w-full px-3 py-2 border rounded-lg" required>
             <option value="">Выберите тип</option>
             <option value="apartment">Апартамент</option>
             <option value="house">Дом</option>
             <option value="room">Комната</option>
             <option value="villa">Вилла</option>
           </select>
-          {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type.message}</p>}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">Адрес</label>
-        <Input {...register("address")} placeholder="ул. Пляжная, дом 10" />
-        {errors.address && <p className="text-sm text-red-500 mt-1">{errors.address.message}</p>}
+        <label className="block text-sm font-medium mb-2" htmlFor="address">
+          Адрес
+        </label>
+        <Input id="address" name="address" placeholder="ул. Пляжная, дом 10" required />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">Город</label>
-        <Input {...register("city")} placeholder="Судак" />
-        {errors.city && <p className="text-sm text-red-500 mt-1">{errors.city.message}</p>}
+        <label className="block text-sm font-medium mb-2" htmlFor="city">
+          Город
+        </label>
+        <Input id="city" name="city" placeholder="Судак" required />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Гости</label>
-          <Input {...register("guests")} type="number" placeholder="4" />
-          {errors.guests && <p className="text-sm text-red-500 mt-1">{errors.guests.message}</p>}
+          <label className="block text-sm font-medium mb-2" htmlFor="guests">
+            Гости
+          </label>
+          <Input id="guests" name="guests" type="number" min="1" placeholder="4" required />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Спальни</label>
-          <Input {...register("bedrooms")} type="number" placeholder="2" />
-          {errors.bedrooms && <p className="text-sm text-red-500 mt-1">{errors.bedrooms.message}</p>}
+          <label className="block text-sm font-medium mb-2" htmlFor="bedrooms">
+            Спальни
+          </label>
+          <Input id="bedrooms" name="bedrooms" type="number" min="1" placeholder="2" required />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Ванные</label>
-          <Input {...register("bathrooms")} type="number" placeholder="1" />
-          {errors.bathrooms && <p className="text-sm text-red-500 mt-1">{errors.bathrooms.message}</p>}
+          <label className="block text-sm font-medium mb-2" htmlFor="bathrooms">
+            Ванные
+          </label>
+          <Input id="bathrooms" name="bathrooms" type="number" min="1" placeholder="1" required />
         </div>
       </div>
 
-      <ImageUpload onImagesChange={setImages} />
+      <div>
+        <label className="block text-sm font-medium mb-2" htmlFor="images">
+          Фото
+        </label>
+        <Input id="images" name="images" type="file" accept="image/*" multiple required />
+        <p className="text-xs text-muted-foreground mt-1">Загрузите несколько изображений жилья</p>
+      </div>
 
-      <AmenitiesSelect value={amenities} onChange={setAmenities} />
+      <div>
+        <p className="block text-sm font-medium mb-3">Удобства</p>
+        <div className="grid grid-cols-2 gap-3">
+          {AMENITIES.map((amenity) => (
+            <label key={amenity.value} className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="amenities" value={amenity.value} className="w-4 h-4 rounded border-gray-300" />
+              <span className="text-sm">{amenity.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? "Создание..." : "Создать объявление"}
-      </Button>
+      {state.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {state.message && <p className="text-sm text-green-600">{state.message}</p>}
+
+      <SubmitButton />
     </form>
   )
 }

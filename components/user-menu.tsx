@@ -23,11 +23,7 @@ export function UserMenu() {
   }
 
   if (!user) {
-    return (
-      <Button onClick={() => router.push("/auth/login")} className="bg-primary hover:bg-primary/90">
-        Войти
-      </Button>
-    )
+    return null
   }
 
   return (

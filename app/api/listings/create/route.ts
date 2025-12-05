@@ -1,15 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createServerSupabaseClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser()
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ message: "Не авторизован" }, { status: 401 })
     }
 
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase.from("listings").insert([
       {
-        host_id: user.id,
+        user_id: user.id,
         title: body.title,
         description: body.description,
         price: body.price,

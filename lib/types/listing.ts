@@ -4,7 +4,7 @@ export type Amenity = "wifi" | "kitchen" | "washing_machine" | "air_conditioner"
 
 export interface Listing {
   id: string
-  host_id: string
+  user_id: string
   title: string
   description: string
   price: number
@@ -31,5 +31,5 @@ export interface CreateListingInput {
   bedrooms: number
   bathrooms: number
   amenities: Amenity[]
-  images: File[]
+  images: string[]
 }
