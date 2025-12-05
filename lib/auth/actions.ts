@@ -15,8 +15,8 @@ interface AuthFormState {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-function createActionClient() {
-  const cookieStore = cookies()
+async function createActionClient() {
+  const cookieStore = await cookies()
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -38,8 +38,10 @@ function createActionClient() {
   })
 }
 
-function getRedirectBase() {
-  return headers().get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+async function getRedirectBase() {
+  const h = await headers()
+
+  return h.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 }
 
 async function resolveUserRole(userId: string): Promise<Role | null> {
@@ -62,11 +64,11 @@ async function ensureProfile(userId: string, email: string, role: Role) {
 }
 
 export async function signUpAction(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const supabase = createActionClient()
+  const supabase = await createActionClient()
   const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
   const role = (formData.get("role") as Role) || "guest"
-  const redirectTo = `${getRedirectBase()}/auth/callback`
+  const redirectTo = `${await getRedirectBase()}/auth/callback`
 
   if (!email || !password) {
     return { error: "Введите email и пароль" }
@@ -102,7 +104,7 @@ export async function signUpAction(_: AuthFormState, formData: FormData): Promis
 }
 
 export async function signInAction(_: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const supabase = createActionClient()
+  const supabase = await createActionClient()
   const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
 
@@ -130,9 +132,17 @@ export async function signInAction(_: AuthFormState, formData: FormData): Promis
   redirect(`/dashboard/${role}`)
 }
 
-export async function signInWithOAuthAction(provider: Provider) {
-  const supabase = createActionClient()
-  const redirectTo = `${getRedirectBase()}/auth/callback`
+export async function signInWithOAuthAction(
+  _: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const supabase = await createActionClient()
+  const provider = formData.get("provider") as Provider | null
+  const redirectTo = `${await getRedirectBase()}/auth/callback`
+
+  if (!provider) {
+    return { error: "Не указан провайдер авторизации" }
+  }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
@@ -149,11 +159,11 @@ export async function signInWithOAuthAction(provider: Provider) {
     redirect(data.url)
   }
 
-  redirect("/auth/login")
+  return { error: "Не удалось выполнить перенаправление" }
 }
 
 export async function signOutAction() {
-  const supabase = createActionClient()
+  const supabase = await createActionClient()
   await supabase.auth.signOut()
   redirect("/")
 }
