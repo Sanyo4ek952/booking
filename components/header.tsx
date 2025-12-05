@@ -2,14 +2,12 @@
 
 import { Menu, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
 import { UserMenu } from "@/components/user-menu"
 import Link from "next/link"
 import { useRole } from "@/hooks/use-role"
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { isHost, isGuest, isLoading } = useRole()
+  const { user, isHost, isGuest, isLoading } = useRole()
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border">
@@ -46,6 +44,11 @@ export function Header() {
 
             {!isLoading && (
               <>
+                {!user && (
+                  <Link href="/auth/login">
+                    <Button className="hidden sm:inline-flex bg-primary hover:bg-primary/90">Войти</Button>
+                  </Link>
+                )}
                 {isHost && (
                   <Link href="/listing/create">
                     <Button className="hidden sm:inline-flex bg-primary hover:bg-primary/90">
@@ -54,7 +57,9 @@ export function Header() {
                   </Link>
                 )}
                 {isGuest && (
-                  <Button className="hidden sm:inline-flex bg-primary hover:bg-primary/90">Найти жильё</Button>
+                  <Link href="/">
+                    <Button className="hidden sm:inline-flex bg-primary hover:bg-primary/90">Найти жильё</Button>
+                  </Link>
                 )}
               </>
             )}
