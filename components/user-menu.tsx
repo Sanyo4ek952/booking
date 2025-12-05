@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useRole } from "@/hooks/use-role"
 import { User } from "lucide-react"
 
 export function UserMenu() {
@@ -12,6 +13,7 @@ export function UserMenu() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const { role } = useRole()
 
   useEffect(() => {
     const getUser = async () => {
@@ -61,7 +63,9 @@ export function UserMenu() {
         <div className="px-2 py-1.5 text-sm">
           <p className="font-medium">{user.email}</p>
         </div>
-        <DropdownMenuItem onClick={() => router.push("/dashboard")}>Личный кабинет</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push(`/dashboard/${role ?? "guest"}`)}>
+          Личный кабинет
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSignOut}>Выход</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
