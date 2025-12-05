@@ -1,7 +1,8 @@
 "use client"
 
-import { useFormState, useFormStatus } from "react-dom"
-import { signInAction, signInWithOAuthAction, signUpAction } from "@/lib/auth/actions"
+import { useActionState } from "react"
+import { useFormStatus } from "react-dom"
+import { type AuthFormState, signInAction, signInWithOAuthAction, signUpAction } from "@/lib/auth/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,7 @@ interface AuthFormProps {
   type: "login" | "signup"
 }
 
-const initialState = {
+const initialState: AuthFormState = {
   error: "",
   message: "",
 }
@@ -28,7 +29,8 @@ function SubmitButton({ label }: { label: string }) {
 
 export function AuthForm({ type }: AuthFormProps) {
   const action = type === "signup" ? signUpAction : signInAction
-  const [state, formAction] = useFormState(action, initialState)
+  const [state, formAction] = useActionState(action, initialState)
+  const showFallbackError = state?.error === undefined && !state?.message
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -72,6 +74,9 @@ export function AuthForm({ type }: AuthFormProps) {
 
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
           {state?.message && <p className="text-sm text-muted-foreground">{state.message}</p>}
+          {showFallbackError && (
+            <p className="text-sm text-red-600">Что-то пошло не так. Попробуйте позже.</p>
+          )}
 
           <SubmitButton label={type === "login" ? "Вход" : "Регистрация"} />
         </form>
