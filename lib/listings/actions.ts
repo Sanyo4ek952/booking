@@ -16,37 +16,41 @@ async function uploadImages(
   userId: string,
   files: File[],
 ): Promise<{ urls: string[]; error?: string }> {
-  try {
-    const collectedUrls: string[] = []
-
-    for (const file of files) {
-      const buffer = new Uint8Array(await file.arrayBuffer())
-      const ext = file.name?.split(".").pop() || "bin"
-      const path = `listings/${userId}/${randomUUID()}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from("listing-images")
-        .upload(path, buffer, { contentType: file.type || "application/octet-stream" })
-
-      if (uploadError) {
-        console.error("Supabase storage upload error:", uploadError)
-        return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
-      }
-
-      const { data: publicUrlData } = supabase.storage.from("listing-images").getPublicUrl(path)
-
-      if (!publicUrlData?.publicUrl) {
-        return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
-      }
-
-      collectedUrls.push(publicUrlData.publicUrl)
-    }
-
-    return { urls: collectedUrls }
-  } catch (error) {
-    console.error("Unexpected upload error:", error)
+  if (!supabase.storage) {
+    console.error("UPLOAD ERROR:", "Supabase storage client is undefined")
     return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
   }
+
+  const collectedUrls: string[] = []
+
+  for (const file of files) {
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = new Uint8Array(arrayBuffer)
+    const ext = file.name?.split(".").pop() || "bin"
+    const path = `listings/${userId}/${randomUUID()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("listing-images")
+      .upload(path, buffer, {
+        contentType: file.type,
+      })
+
+    if (uploadError) {
+      console.error("UPLOAD ERROR:", uploadError)
+      return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
+    }
+
+    const { data: urlData } = supabase.storage.from("listing-images").getPublicUrl(path)
+
+    if (!urlData?.publicUrl) {
+      console.error("UPLOAD ERROR:", "Failed to resolve public URL for uploaded image")
+      return { urls: [], error: "Не удалось загрузить фото. Попробуйте позже." }
+    }
+
+    collectedUrls.push(urlData.publicUrl)
+  }
+
+  return { urls: collectedUrls }
 }
 
 export async function createListingAction(_: ListingActionState, formData: FormData): Promise<ListingActionState> {
