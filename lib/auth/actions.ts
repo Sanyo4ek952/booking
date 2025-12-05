@@ -2,6 +2,7 @@
 
 import { headers, cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { isRedirectError } from "next/dist/client/components/redirect"
 import { createServerClient } from "@supabase/ssr"
 import type { Provider } from "@supabase/supabase-js"
 import { createServiceRoleClient } from "@/lib/supabase/admin"
@@ -107,6 +108,9 @@ export async function signUpAction(_: AuthFormState, formData: FormData): Promis
       message: "Подтвердите email, чтобы завершить регистрацию",
     }
   } catch (err) {
+    if (isRedirectError(err)) {
+      throw err
+    }
     console.error("Auth action error:", err)
     return {
       error: "Что-то пошло не так. Попробуйте позже.",
@@ -144,6 +148,9 @@ export async function signInAction(_: AuthFormState, formData: FormData): Promis
 
     redirect(`/dashboard/${role}`)
   } catch (err) {
+    if (isRedirectError(err)) {
+      throw err
+    }
     console.error("Auth action error:", err)
     return {
       error: "Что-то пошло не так. Попробуйте позже.",
@@ -174,6 +181,9 @@ export async function signInWithOAuthAction(provider: Provider): Promise<AuthFor
 
     redirect("/auth/login")
   } catch (err) {
+    if (isRedirectError(err)) {
+      throw err
+    }
     console.error("Auth action error:", err)
     return { error: "Что-то пошло не так при входе через OAuth. Попробуйте позже.", message: "" }
   }
