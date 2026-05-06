@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-sand-50: #fbf7f0;
+  --color-sand-100: #f7efe4;
+  --color-sand-200: #eadccb;
+  --color-graphite-900: #20211f;
+  --color-graphite-700: #3d3e3b;
+  --color-graphite-500: #6f716b;
+  --color-sage-600: #477668;
+  --color-sage-700: #315f54;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top left, rgba(234, 220, 203, 0.8), transparent 34rem),
+    linear-gradient(180deg, #fbf7f0 0%, #f7efe4 52%, #fffaf3 100%);
+  color: #20211f;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.booking-calendar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #477668 #f7efe4;
+}
+
+.booking-calendar-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.booking-calendar-scroll::-webkit-scrollbar-track {
+  background: #f7efe4;
+}
+
+.booking-calendar-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #477668;
+}
