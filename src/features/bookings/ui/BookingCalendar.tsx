@@ -27,6 +27,7 @@ type TimelineBooking = {
 };
 
 const visibleDays = 31;
+const visibleDayParts = visibleDays * 2;
 
 const statusBarClassName: Record<BookingStatus, string> = {
   reserved: "border-amber-300 bg-amber-100 text-amber-950 shadow-amber-200/70",
@@ -39,14 +40,14 @@ function getVisibleBooking(booking: Booking, viewStart: Date, viewEnd: Date): Ti
   const checkIn = parseISO(booking.check_in);
   const checkOut = parseISO(booking.check_out);
 
-  if (checkOut <= viewStart || checkIn >= viewEnd) {
+  if (checkOut < viewStart || checkIn >= viewEnd) {
     return null;
   }
 
   const startOffset = differenceInCalendarDays(checkIn, viewStart);
   const endOffset = differenceInCalendarDays(checkOut, viewStart);
-  const startColumn = Math.max(0, startOffset);
-  const endColumn = Math.min(visibleDays, endOffset);
+  const startColumn = Math.max(0, startOffset * 2 + 1);
+  const endColumn = Math.min(visibleDayParts, endOffset * 2 + 1);
   const span = Math.max(1, endColumn - startColumn);
 
   return {
@@ -61,6 +62,9 @@ function getVisibleBooking(booking: Booking, viewStart: Date, viewEnd: Date): Ti
 export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
   const [anchorDate, setAnchorDate] = useState(startOfMonth(new Date()));
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const calendarGridColumns = `minmax(76px, 120px) repeat(${visibleDays}, minmax(0, 1fr))`;
+  const daysGridColumns = `repeat(${visibleDays}, minmax(0, 1fr))`;
+  const bookingGridColumns = `repeat(${visibleDayParts}, minmax(0, 1fr))`;
 
   const days = useMemo(
     () => Array.from({ length: visibleDays }, (_, index) => addDays(anchorDate, index)),
@@ -143,49 +147,45 @@ export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
         </div>
       </div>
 
-      <div
-        className="booking-calendar-scroll overflow-x-auto overscroll-x-contain"
-        style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-x" }}
-      >
-        <div className="min-w-[972px] p-3 [--day-col:28px] [--room-col:104px] sm:min-w-[1668px] sm:p-6 sm:[--day-col:48px] sm:[--room-col:180px]">
+      <div className="overflow-x-hidden">
+        <div className="w-full p-2 sm:p-4">
           <div
-            className="grid gap-y-1.5 sm:gap-y-2"
-            style={{ gridTemplateColumns: `var(--room-col) repeat(${visibleDays}, var(--day-col))` }}
+            className="grid gap-y-1 sm:gap-y-1.5"
+            style={{ gridTemplateColumns: calendarGridColumns }}
           >
             <div className="sticky left-0 z-20 bg-white" />
             {days.map((day) => (
               <div
                 key={day.toISOString()}
                 className={cn(
-                  "grid h-10 place-items-center border-b border-sand-200 text-center text-[10px] text-graphite-500 sm:h-14 sm:text-xs",
+                  "grid h-8 place-items-center border-b border-sand-200 text-center text-[8px] text-graphite-500 sm:h-10 sm:text-[10px]",
                   isSameDay(day, new Date()) && "rounded-t-lg bg-sand-100 font-semibold text-graphite-900",
                 )}
               >
                 <span>{format(day, "d")}</span>
-                <span className="text-[8px] uppercase sm:hidden">{format(day, "EEEEE", { locale: ru })}</span>
-                <span className="hidden text-[10px] uppercase sm:inline">{format(day, "EEE", { locale: ru })}</span>
+                <span className="hidden text-[8px] uppercase md:inline">{format(day, "EEEEE", { locale: ru })}</span>
               </div>
             ))}
 
             {bookingsByRoom.map(({ room, bookings: roomBookings }) => (
               <div key={room.id} className="contents">
-                <div className="sticky left-0 z-20 flex min-h-14 items-center gap-2 border-r border-sand-200 bg-white pr-2 sm:min-h-20 sm:gap-3 sm:pr-4">
-                  <span className={cn("grid h-7 w-7 place-items-center rounded-lg text-xs font-semibold text-white sm:h-9 sm:w-9 sm:text-sm", room.accentClass)}>
+                <div className="sticky left-0 z-20 flex min-h-12 items-center gap-1.5 border-r border-sand-200 bg-white pr-1.5 sm:min-h-16 sm:gap-2 sm:pr-3">
+                  <span className={cn("grid h-6 w-6 place-items-center rounded-md text-[10px] font-semibold text-white sm:h-7 sm:w-7 sm:text-xs", room.accentClass)}>
                     {room.shortName}
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-xs font-semibold text-graphite-900 sm:text-sm">{room.name}</div>
-                    <div className="truncate text-[10px] text-graphite-500 sm:text-xs">{roomBookings.length ? `${roomBookings.length} броней` : "свободно"}</div>
+                    <div className="truncate text-[10px] font-semibold text-graphite-900 sm:text-xs">{room.name}</div>
+                    <div className="truncate text-[9px] text-graphite-500 sm:text-[10px]">{roomBookings.length ? `${roomBookings.length} броней` : "свободно"}</div>
                   </div>
                 </div>
 
                 <div
-                  className="relative col-span-31 min-h-14 overflow-hidden rounded-lg border border-sand-200 bg-white sm:min-h-20"
+                  className="relative col-span-31 min-h-12 overflow-hidden rounded-md border border-sand-200 bg-white sm:min-h-16"
                   style={{ gridColumn: `2 / span ${visibleDays}` }}
                 >
                   <div
                     className="absolute inset-0 grid"
-                    style={{ gridTemplateColumns: `repeat(${visibleDays}, var(--day-col))` }}
+                    style={{ gridTemplateColumns: daysGridColumns }}
                   >
                     {days.map((day) => (
                       <div
@@ -200,14 +200,14 @@ export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
 
                   <div
                     className="absolute inset-x-0 top-1/2 grid -translate-y-1/2 px-0.5 sm:px-1"
-                    style={{ gridTemplateColumns: `repeat(${visibleDays}, var(--day-col))` }}
+                    style={{ gridTemplateColumns: bookingGridColumns }}
                   >
                     {roomBookings.map(({ booking, startsBeforeView, endsAfterView, startColumn, span }) => (
                       <button
                         key={booking.id}
                         type="button"
                         className={cn(
-                          "group relative z-10 mx-px flex h-9 min-w-0 items-center gap-1 overflow-hidden border px-1.5 text-left text-[10px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-sage-600 sm:mx-0.5 sm:h-12 sm:gap-2 sm:px-3 sm:text-xs",
+                          "group relative z-10 mx-px flex h-7 min-w-0 items-center gap-1 overflow-hidden border px-1 text-left text-[9px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-sage-600 sm:mx-0.5 sm:h-9 sm:px-2 sm:text-[10px]",
                           startsBeforeView ? "rounded-l-none" : "rounded-l-lg",
                           endsAfterView ? "rounded-r-none" : "rounded-r-lg",
                           statusBarClassName[booking.status],
@@ -216,14 +216,14 @@ export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
                         title={`${booking.guest_name}: ${formatRuDate(booking.check_in)} - ${formatRuDate(booking.check_out)}`}
                         onClick={() => setSelectedBooking(booking)}
                       >
-                        {!startsBeforeView && <LogIn className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />}
+                        {!startsBeforeView && <LogIn className="hidden h-3 w-3 shrink-0 sm:block" />}
                         <span className="min-w-0 truncate">{booking.guest_name}</span>
                         {span >= 4 && (
-                          <span className="ml-auto hidden shrink-0 text-[10px] font-medium opacity-75 sm:inline">
+                          <span className="ml-auto hidden shrink-0 text-[9px] font-medium opacity-75 lg:inline">
                             {format(parseISO(booking.check_in), "d MMM", { locale: ru })} - {format(parseISO(booking.check_out), "d MMM", { locale: ru })}
                           </span>
                         )}
-                        {!endsAfterView && <LogOut className="h-3 w-3 shrink-0 opacity-80 sm:h-3.5 sm:w-3.5" />}
+                        {!endsAfterView && <LogOut className="hidden h-3 w-3 shrink-0 opacity-80 sm:block" />}
                       </button>
                     ))}
                   </div>
