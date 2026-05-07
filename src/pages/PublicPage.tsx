@@ -77,32 +77,28 @@ export function PublicPage() {
               <p className="text-sm text-graphite-500">Ближайший заезд и выезд по каждому номеру.</p>
             </div>
 
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[460px] border-separate border-spacing-0 text-left text-sm">
-                <thead>
-                  <tr className="text-xs uppercase text-graphite-500">
-                    <th className="border-b border-sand-200 px-3 py-2 font-semibold">Номер</th>
-                    <th className="border-b border-sand-200 px-3 py-2 font-semibold">Ближайший заезд</th>
-                    <th className="border-b border-sand-200 px-3 py-2 font-semibold">Ближайший выезд</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roomActualRows.map(({ room, nearestCheckIn, nearestCheckOut }) => (
-                    <tr key={room.id} className="border-b border-sand-200">
-                      <td className="border-b border-sand-100 px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className={`grid h-7 w-7 place-items-center rounded-md text-xs font-semibold text-white ${room.accentClass}`}>
-                            {room.shortName}
-                          </span>
-                          <span className="font-medium text-graphite-900">{room.name}</span>
-                        </div>
-                      </td>
-                      <td className="border-b border-sand-100 px-3 py-3 text-graphite-700">{nearestCheckIn}</td>
-                      <td className="border-b border-sand-100 px-3 py-3 text-graphite-700">{nearestCheckOut}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {roomActualRows.map(({ room, nearestCheckIn, nearestCheckOut }) => (
+                <div key={room.id} className="rounded-lg border border-sand-200 bg-sand-50/70 p-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`grid h-8 w-8 place-items-center rounded-md text-sm font-semibold text-white ${room.accentClass}`}>
+                      {room.shortName}
+                    </span>
+                    <span className="font-semibold text-graphite-900">{room.name}</span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded-md bg-white/80 p-2">
+                      <div className="text-[10px] font-semibold uppercase text-graphite-500">Ближайший заезд</div>
+                      <div className="mt-1 font-medium text-graphite-900">{nearestCheckIn}</div>
+                    </div>
+                    <div className="rounded-md bg-white/80 p-2">
+                      <div className="text-[10px] font-semibold uppercase text-graphite-500">Ближайший выезд</div>
+                      <div className="mt-1 font-medium text-graphite-900">{nearestCheckOut}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
 
