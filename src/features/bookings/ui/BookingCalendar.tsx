@@ -2,6 +2,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { addDays, addMonths, differenceInCalendarDays, format, isSameDay, parseISO, startOfMonth } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight, LogIn, LogOut, X } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { rooms } from "@/entities/room";
 import { Badge } from "@/shared/ui/Badge";
@@ -62,9 +63,10 @@ function getVisibleBooking(booking: Booking, viewStart: Date, viewEnd: Date): Ti
 export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
   const [anchorDate, setAnchorDate] = useState(startOfMonth(new Date()));
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const calendarGridColumns = `minmax(76px, 120px) repeat(${visibleDays}, minmax(0, 1fr))`;
-  const daysGridColumns = `repeat(${visibleDays}, minmax(0, 1fr))`;
-  const bookingGridColumns = `repeat(${visibleDayParts}, minmax(0, 1fr))`;
+  const calendarGridColumns = `36px repeat(${visibleDays}, minmax(24px, 1fr))`;
+  const desktopCalendarGridColumns = `minmax(104px, 124px) repeat(${visibleDays}, minmax(24px, 1fr))`;
+  const daysGridColumns = `repeat(${visibleDays}, minmax(24px, 1fr))`;
+  const bookingGridColumns = `repeat(${visibleDayParts}, minmax(12px, 1fr))`;
 
   const days = useMemo(
     () => Array.from({ length: visibleDays }, (_, index) => addDays(anchorDate, index)),
@@ -147,40 +149,43 @@ export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
         </div>
       </div>
 
-      <div className="overflow-x-hidden">
-        <div className="w-full p-2 sm:p-4">
+      <div className="booking-calendar-scroll overflow-x-auto">
+        <div className="min-w-max p-3 pb-4 sm:w-full sm:p-4">
           <div
-            className="grid gap-y-1 sm:gap-y-1.5"
-            style={{ gridTemplateColumns: calendarGridColumns }}
+            className="booking-calendar-grid grid gap-y-2 sm:gap-y-1.5"
+            style={{
+              "--booking-calendar-columns": calendarGridColumns,
+              "--booking-calendar-desktop-columns": desktopCalendarGridColumns,
+            } as CSSProperties}
           >
-            <div className="sticky left-0 z-20 bg-white" />
+            <div className="sticky left-0 z-20 w-9 bg-white shadow-[8px_0_14px_-14px_rgba(32,33,31,0.45)] sm:w-auto" />
             {days.map((day) => (
               <div
                 key={day.toISOString()}
                 className={cn(
-                  "grid h-8 place-items-center border-b border-sand-200 text-center text-[8px] text-graphite-500 sm:h-10 sm:text-[10px]",
-                  isSameDay(day, new Date()) && "rounded-t-lg bg-sand-100 font-semibold text-graphite-900",
+                  "grid h-12 place-items-center rounded-lg border border-sand-200 bg-sand-50/70 px-1 text-center text-sm font-semibold leading-none text-graphite-700 sm:h-10 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:text-[10px] sm:font-normal sm:text-graphite-500",
+                  isSameDay(day, new Date()) && "border-sage-600/30 bg-sand-100 text-graphite-900 ring-1 ring-sage-600/20 sm:rounded-t-lg sm:font-semibold",
                 )}
               >
                 <span>{format(day, "d")}</span>
-                <span className="hidden text-[8px] uppercase md:inline">{format(day, "EEEEE", { locale: ru })}</span>
+                <span className="text-[10px] font-medium uppercase text-graphite-500 sm:text-[8px] md:inline">{format(day, "EEEEE", { locale: ru })}</span>
               </div>
             ))}
 
             {bookingsByRoom.map(({ room, bookings: roomBookings }) => (
               <div key={room.id} className="contents">
-                <div className="sticky left-0 z-20 flex min-h-12 items-center gap-1.5 border-r border-sand-200 bg-white pr-1.5 sm:min-h-16 sm:gap-2 sm:pr-3">
-                  <span className={cn("grid h-6 w-6 place-items-center rounded-md text-[10px] font-semibold text-white sm:h-7 sm:w-7 sm:text-xs", room.accentClass)}>
+                <div className="sticky left-0 z-20 flex min-h-14 w-9 items-center justify-center border-r border-sand-200 bg-white shadow-[8px_0_14px_-14px_rgba(32,33,31,0.45)] sm:min-h-16 sm:w-auto sm:justify-start sm:gap-2 sm:pr-3">
+                  <span className={cn("grid h-8 w-8 place-items-center rounded-md text-sm font-semibold text-white sm:h-7 sm:w-7 sm:text-xs", room.accentClass)}>
                     {room.shortName}
                   </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-[10px] font-semibold text-graphite-900 sm:text-xs">{room.name}</div>
+                  <div className="hidden min-w-0 sm:block">
+                    <div className="truncate text-xs font-semibold text-graphite-900">{room.name}</div>
                     <div className="truncate text-[9px] text-graphite-500 sm:text-[10px]">{roomBookings.length ? `${roomBookings.length} броней` : "свободно"}</div>
                   </div>
                 </div>
 
                 <div
-                  className="relative col-span-31 min-h-12 overflow-hidden rounded-md border border-sand-200 bg-white sm:min-h-16"
+                  className="relative min-h-14 overflow-hidden rounded-lg border border-sand-200 bg-white sm:min-h-16 sm:rounded-md"
                   style={{ gridColumn: `2 / span ${visibleDays}` }}
                 >
                   <div
@@ -207,7 +212,7 @@ export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
                         key={booking.id}
                         type="button"
                         className={cn(
-                          "group relative z-10 mx-px flex h-7 min-w-0 items-center gap-1 overflow-hidden border px-1 text-left text-[9px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-sage-600 sm:mx-0.5 sm:h-9 sm:px-2 sm:text-[10px]",
+                          "group relative z-10 mx-0.5 flex h-8 min-w-0 items-center gap-1 overflow-hidden border px-1.5 text-left text-[10px] font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-sage-600 sm:h-9 sm:px-2",
                           startsBeforeView ? "rounded-l-none" : "rounded-l-lg",
                           endsAfterView ? "rounded-r-none" : "rounded-r-lg",
                           statusBarClassName[booking.status],

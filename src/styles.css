@@ -38,6 +38,16 @@ select {
   scrollbar-color: #477668 #f7efe4;
 }
 
+.booking-calendar-grid {
+  grid-template-columns: var(--booking-calendar-columns);
+}
+
+@media (min-width: 640px) {
+  .booking-calendar-grid {
+    grid-template-columns: var(--booking-calendar-desktop-columns);
+  }
+}
+
 .booking-calendar-scroll::-webkit-scrollbar {
   height: 8px;
 }
