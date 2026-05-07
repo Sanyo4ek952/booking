@@ -11,6 +11,7 @@ import { Card } from "@/shared/ui/Card";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { cn } from "@/shared/lib/cn";
 import { formatRuDate } from "@/shared/lib/date";
+import { formatPrice, getRoomPriceForDate } from "../model/prices";
 import { bookingStatuses, statusClassName, statusLabel } from "../model/status";
 import type { Booking, BookingStatus } from "../model/types";
 
@@ -58,6 +59,15 @@ function getVisibleBooking(booking: Booking, viewStart: Date, viewEnd: Date): Ti
     startColumn,
     span,
   };
+}
+
+function isDayBooked(bookings: Booking[], day: Date) {
+  return bookings.some((booking) => {
+    const checkIn = parseISO(booking.check_in);
+    const checkOut = parseISO(booking.check_out);
+
+    return checkIn <= day && checkOut > day;
+  });
 }
 
 export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
@@ -192,15 +202,30 @@ export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
                     className="absolute inset-0 grid"
                     style={{ gridTemplateColumns: daysGridColumns }}
                   >
-                    {days.map((day) => (
-                      <div
-                        key={`${room.id}-${day.toISOString()}`}
-                        className={cn(
-                          "border-r border-sand-100 bg-sand-50/40",
-                          isSameDay(day, new Date()) && "bg-sand-100/80",
-                        )}
-                      />
-                    ))}
+                    {days.map((day) => {
+                      const roomPrice = getRoomPriceForDate(room.id, day);
+                      const booked = isDayBooked(
+                        bookings.filter((booking) => booking.room_id === room.id),
+                        day,
+                      );
+
+                      return (
+                        <div
+                          key={`${room.id}-${day.toISOString()}`}
+                          className={cn(
+                            "flex h-full items-end justify-center border-r border-sand-100 bg-sand-50/40 pb-1",
+                            isSameDay(day, new Date()) && "bg-sand-100/80",
+                          )}
+                          title={roomPrice && !booked ? `${formatPrice(roomPrice)} ₽` : undefined}
+                        >
+                          {roomPrice && !booked && (
+                            <span className="select-none text-[8px] font-semibold leading-none text-graphite-500 sm:text-[9px]">
+                              {roomPrice}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div
