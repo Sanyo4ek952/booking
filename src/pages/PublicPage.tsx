@@ -1,13 +1,34 @@
-import { BookingCalendar, useBookings } from "@/features/bookings";
-import { formatPrice, getDiscountedPrice, priceSections } from "@/features/bookings/model/prices";
+import { compareAsc, format, parseISO, startOfDay } from "date-fns";
+import { ru } from "date-fns/locale";
+import { BookingCalendar, formatPrice, getDiscountedPrice, priceSections, useBookings } from "@/features/bookings";
+import type { Booking } from "@/features/bookings/model/types";
 import { ChevronDown } from "lucide-react";
+import { rooms } from "@/entities/room";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { EnvNotice } from "@/shared/ui/EnvNotice";
 import { Card } from "@/shared/ui/Card";
 import { isSupabaseConfigured } from "@/shared/api/supabase";
 
+function getNearestDate(bookings: Booking[], field: "check_in" | "check_out") {
+  const today = startOfDay(new Date());
+  const nearestBooking = bookings
+    .filter((booking) => parseISO(booking[field]) >= today)
+    .sort((a, b) => compareAsc(parseISO(a[field]), parseISO(b[field])))[0];
+
+  return nearestBooking ? format(parseISO(nearestBooking[field]), "d MMMM", { locale: ru }) : "—";
+}
+
 export function PublicPage() {
   const { data: bookings = [], isLoading, isError, error } = useBookings();
+  const roomActualRows = rooms.map((room) => {
+    const roomBookings = bookings.filter((booking) => booking.room_id === room.id);
+
+    return {
+      room,
+      nearestCheckIn: getNearestDate(roomBookings, "check_in"),
+      nearestCheckOut: getNearestDate(roomBookings, "check_out"),
+    };
+  });
 
   return (
     <div>
@@ -47,6 +68,41 @@ export function PublicPage() {
                   </div>
                 </details>
               ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 sm:p-5">
+            <div>
+              <h2 className="text-lg font-semibold text-graphite-900">Актуальные данные</h2>
+              <p className="text-sm text-graphite-500">Ближайший заезд и выезд по каждому номеру.</p>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[460px] border-separate border-spacing-0 text-left text-sm">
+                <thead>
+                  <tr className="text-xs uppercase text-graphite-500">
+                    <th className="border-b border-sand-200 px-3 py-2 font-semibold">Номер</th>
+                    <th className="border-b border-sand-200 px-3 py-2 font-semibold">Ближайший заезд</th>
+                    <th className="border-b border-sand-200 px-3 py-2 font-semibold">Ближайший выезд</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roomActualRows.map(({ room, nearestCheckIn, nearestCheckOut }) => (
+                    <tr key={room.id} className="border-b border-sand-200">
+                      <td className="border-b border-sand-100 px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`grid h-7 w-7 place-items-center rounded-md text-xs font-semibold text-white ${room.accentClass}`}>
+                            {room.shortName}
+                          </span>
+                          <span className="font-medium text-graphite-900">{room.name}</span>
+                        </div>
+                      </td>
+                      <td className="border-b border-sand-100 px-3 py-3 text-graphite-700">{nearestCheckIn}</td>
+                      <td className="border-b border-sand-100 px-3 py-3 text-graphite-700">{nearestCheckOut}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </Card>
 
