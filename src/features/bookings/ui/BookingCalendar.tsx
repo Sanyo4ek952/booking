@@ -11,8 +11,7 @@ import { Card } from "@/shared/ui/Card";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { cn } from "@/shared/lib/cn";
 import { formatRuDate } from "@/shared/lib/date";
-import { formatPrice, getRoomPriceForDate } from "@/features/bookings/model/prices";
-import { bookingStatuses, statusClassName, statusLabel } from "../model/status";
+import { bookingStatuses, formatPrice, getRoomPriceForDate, statusClassName, statusLabel } from "../model/status";
 import type { Booking, BookingStatus } from "../model/types";
 
 type BookingCalendarProps = {
