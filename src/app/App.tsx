@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { ToastProvider } from "@/shared/ui/Toast";
 import { AdminPage } from "@/pages/AdminPage";
 import { PublicPage } from "@/pages/PublicPage";
+import { RoomsPage } from "@/pages/RoomsPage";
 import { RootLayout } from "./RootLayout";
 
 const queryClient = new QueryClient({
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <PublicPage /> },
+      { path: "rooms", element: <RoomsPage /> },
       { path: "admin", element: <AdminPage /> },
     ],
   },

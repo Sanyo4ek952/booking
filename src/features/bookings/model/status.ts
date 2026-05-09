@@ -70,6 +70,16 @@ export function getDiscountedPrice(price: number) {
   return Math.ceil(price * 0.8);
 }
 
+export function getMinimumRoomPrice(roomId: RoomId) {
+  const section = priceSections.find((priceSection) => priceSection.roomIds.includes(roomId));
+
+  if (!section) {
+    return null;
+  }
+
+  return Math.min(...section.prices.map(({ price }) => getDiscountedPrice(price)));
+}
+
 export function getRoomPriceForDate(roomId: RoomId, date: Date) {
   const section = priceSections.find((priceSection) => priceSection.roomIds.includes(roomId));
 

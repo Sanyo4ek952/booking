@@ -6,4 +6,6 @@ export type Room = {
   shortName: string;
   description: string;
   accentClass: string;
+  imageUrl: string;
+  capacity: number;
 };

@@ -1,4 +1,4 @@
-import { CalendarCheck, LayoutDashboard } from "lucide-react";
+import { BedDouble, CalendarCheck, LayoutDashboard } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
 import { Button } from "@/shared/ui/Button";
 import { cn } from "@/shared/lib/cn";
@@ -21,6 +21,7 @@ export function RootLayout() {
           <nav className="flex items-center gap-2">
             <NavLink
               to="/"
+              end
               className={({ isActive }) =>
                 cn(
                   "rounded-2xl px-3 py-2 text-sm font-medium text-graphite-700 hover:bg-white",
@@ -29,6 +30,18 @@ export function RootLayout() {
               }
             >
               Календарь
+            </NavLink>
+            <NavLink
+              to="/rooms"
+              className={({ isActive }) =>
+                cn(
+                  "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-graphite-700 hover:bg-white",
+                  isActive && "bg-white text-graphite-900 shadow-sm",
+                )
+              }
+            >
+              <BedDouble className="h-4 w-4" />
+              Номера
             </NavLink>
             <Button asChild variant="secondary" size="sm">
               <NavLink to="/admin">
