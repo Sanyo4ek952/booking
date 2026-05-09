@@ -290,6 +290,10 @@ export function BookingCalendar({ bookings, isLoading }: BookingCalendarProps) {
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl bg-sand-50 p-3">
+                    <span className="text-graphite-500">Сумма</span>
+                    <span className="font-medium text-graphite-900">{formatPrice(selectedBooking.amount)} ₽</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-sand-50 p-3">
                     <span className="text-graphite-500">Статус</span>
                     <Badge className={statusClassName(selectedBooking.status)}>{statusLabel(selectedBooking.status)}</Badge>
                   </div>

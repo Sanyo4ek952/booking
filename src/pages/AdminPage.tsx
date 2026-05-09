@@ -1,4 +1,5 @@
-import { Filter, RefreshCw } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Filter, RefreshCw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { rooms, type RoomId } from "@/entities/room";
 import {
@@ -23,6 +24,13 @@ import { isSupabaseConfigured } from "@/shared/api/supabase";
 
 type RoomFilter = "all" | RoomId;
 type StatusFilter = "all" | BookingStatus;
+type StatsModal = "total" | "active" | "amount";
+
+const currencyFormatter = new Intl.NumberFormat("ru-RU", {
+  style: "currency",
+  currency: "RUB",
+  maximumFractionDigits: 0,
+});
 
 export function AdminPage() {
   const { toast } = useToast();
@@ -34,6 +42,7 @@ export function AdminPage() {
   const [formVersion, setFormVersion] = useState(0);
   const [roomFilter, setRoomFilter] = useState<RoomFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statsModal, setStatsModal] = useState<StatsModal | null>(null);
 
   const filteredBookings = useMemo(
     () =>
@@ -88,8 +97,30 @@ export function AdminPage() {
     }
   };
 
-  const totalAmount = bookings.reduce((sum, booking) => sum + Number(booking.amount), 0);
-  const activeBookings = bookings.filter((booking) => booking.status !== "checked_out").length;
+  const roomStats = useMemo(
+    () =>
+      rooms.map((room) => {
+        const roomBookings = bookings.filter((booking) => booking.room_id === room.id);
+        const activeRoomBookings = roomBookings.filter((booking) => booking.status !== "checked_out");
+
+        return {
+          room,
+          totalBookings: roomBookings.length,
+          activeBookings: activeRoomBookings.length,
+          amount: roomBookings.reduce((sum, booking) => sum + Number(booking.amount), 0),
+        };
+      }),
+    [bookings],
+  );
+
+  const totalAmount = roomStats.reduce((sum, stat) => sum + stat.amount, 0);
+  const activeBookings = roomStats.reduce((sum, stat) => sum + stat.activeBookings, 0);
+  const statsModalTitle =
+    statsModal === "total"
+      ? "Всего броней по номерам"
+      : statsModal === "active"
+        ? "Активные брони по номерам"
+        : "Сумма по номерам";
 
   return (
     <div className="grid gap-8">
@@ -113,17 +144,36 @@ export function AdminPage() {
         <>
           <section className="grid gap-4 sm:grid-cols-3">
             <Card className="p-5">
-              <div className="text-sm text-graphite-500">Всего броней</div>
-              <div className="mt-2 text-3xl font-semibold text-graphite-900">{bookings.length}</div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm text-graphite-500">Всего броней</div>
+                  <div className="mt-2 text-3xl font-semibold text-graphite-900">{bookings.length}</div>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => setStatsModal("total")}>
+                  Подробнее
+                </Button>
+              </div>
             </Card>
             <Card className="p-5">
-              <div className="text-sm text-graphite-500">Активные</div>
-              <div className="mt-2 text-3xl font-semibold text-graphite-900">{activeBookings}</div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm text-graphite-500">Активные</div>
+                  <div className="mt-2 text-3xl font-semibold text-graphite-900">{activeBookings}</div>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => setStatsModal("active")}>
+                  Подробнее
+                </Button>
+              </div>
             </Card>
             <Card className="p-5">
-              <div className="text-sm text-graphite-500">Сумма</div>
-              <div className="mt-2 text-3xl font-semibold text-graphite-900">
-                {new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(totalAmount)}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm text-graphite-500">Сумма</div>
+                  <div className="mt-2 text-3xl font-semibold text-graphite-900">{currencyFormatter.format(totalAmount)}</div>
+                </div>
+                <Button variant="secondary" size="sm" onClick={() => setStatsModal("amount")}>
+                  Подробнее
+                </Button>
               </div>
             </Card>
           </section>
@@ -134,7 +184,7 @@ export function AdminPage() {
             </Card>
           )}
 
-          <section className="grid gap-6 lg:grid-cols-[420px_1fr] lg:items-start">
+          <section className="grid gap-6">
             <BookingForm
               key={`${editingBooking?.id ?? "new"}-${formVersion}`}
               bookings={bookings}
@@ -183,6 +233,43 @@ export function AdminPage() {
               )}
             </div>
           </section>
+
+          <Dialog.Root open={Boolean(statsModal)} onOpenChange={(open) => !open && setStatsModal(null)}>
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 z-40 bg-graphite-900/25 backdrop-blur-sm" />
+              <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white bg-white p-6 shadow-2xl shadow-stone-900/20">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Dialog.Title className="text-xl font-semibold text-graphite-900">{statsModalTitle}</Dialog.Title>
+                    <Dialog.Description className="mt-1 text-sm text-graphite-500">
+                      Детализация текущих броней по каждому номеру.
+                    </Dialog.Description>
+                  </div>
+                  <Dialog.Close className="rounded-full p-2 text-graphite-500 hover:bg-sand-100" aria-label="Закрыть">
+                    <X className="h-4 w-4" />
+                  </Dialog.Close>
+                </div>
+
+                <div className="mt-5 grid gap-3">
+                  {roomStats.map((stat) => (
+                    <div key={stat.room.id} className="flex items-center justify-between gap-4 rounded-xl bg-sand-50 p-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md text-sm font-semibold text-white ${stat.room.accentClass}`}>
+                          {stat.room.shortName}
+                        </span>
+                        <span className="truncate text-sm font-medium text-graphite-900">{stat.room.name}</span>
+                      </div>
+                      <span className="shrink-0 text-sm font-semibold text-graphite-900">
+                        {statsModal === "amount"
+                          ? currencyFormatter.format(stat.amount)
+                          : `${statsModal === "active" ? stat.activeBookings : stat.totalBookings} броней`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
         </>
       )}
     </div>
