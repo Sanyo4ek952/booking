@@ -43,6 +43,26 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 - `/` - публичная страница с календарем занятости.
 - `/admin` - dashboard для создания, редактирования, удаления и фильтрации броней.
 
+## PWA
+
+Приложение содержит базовую installable PWA-конфигурацию для Vite:
+
+- manifest доступен по `/manifest.webmanifest`;
+- service worker доступен по `/sw.js` и регистрируется только в production-сборке;
+- service worker кеширует shell приложения и безопасные статические ресурсы, но не кеширует API, auth-запросы и пользовательские данные;
+- navigation request использует network-first стратегию с fallback на `/`.
+
+Иконки в `public/icons` сейчас являются placeholder-ассетами. TODO: заменить их на финальные брендированные иконки перед production-релизом.
+
+Проверка в Chrome DevTools:
+
+1. Соберите и запустите production preview: `npm run build`, затем `npm run preview`.
+2. Откройте Application -> Manifest и проверьте manifest, `start_url`, `scope` и иконки.
+3. Откройте Application -> Service Workers и проверьте регистрацию `/sw.js`.
+4. Запустите Lighthouse -> PWA/installability.
+
+Полноценная установка PWA требует HTTPS или `localhost`.
+
 ## Архитектура
 
 ```text
