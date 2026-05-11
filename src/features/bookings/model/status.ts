@@ -32,43 +32,39 @@ export const priceSections: PriceSection[] = [
     title: "Номера 1 и 2",
     roomIds: ["room-1", "room-2"],
     prices: [
-      { period: "май - 1 июня", price: 2700, from: [5, 1], to: [6, 1] },
-      { period: "2 - 15 июня", price: 3750, from: [6, 2], to: [6, 15] },
-      { period: "16 июня - 14 июля", price: 4375, from: [6, 16], to: [7, 14] },
-      { period: "15 июля - 27 августа", price: 4750, from: [7, 15], to: [8, 27] },
-      { period: "28 августа - 10 сентября", price: 3750, from: [8, 28], to: [9, 10] },
-      { period: "11 сентября - 30 октября", price: 3000, from: [9, 11], to: [10, 30] },
+      { period: "май - 1 июня", price: 2160, from: [5, 1], to: [6, 1] },
+      { period: "2 - 15 июня", price: 3000, from: [6, 2], to: [6, 15] },
+      { period: "16 июня - 14 июля", price: 3500, from: [6, 16], to: [7, 14] },
+      { period: "15 июля - 27 августа", price: 3800, from: [7, 15], to: [8, 27] },
+      { period: "28 августа - 10 сентября", price: 3000, from: [8, 28], to: [9, 10] },
+      { period: "11 сентября - 30 октября", price: 2400, from: [9, 11], to: [10, 30] },
     ],
   },
   {
     title: "Номер 3",
     roomIds: ["room-3"],
     prices: [
-      { period: "май - 15 июня", price: 3125, from: [5, 1], to: [6, 14] },
-      { period: "15 июня - 15 июля", price: 3750, from: [6, 15], to: [7, 14] },
-      { period: "15 июля - 28 августа", price: 4125, from: [7, 15], to: [8, 27] },
-      { period: "28 августа - 10 сентября", price: 3250, from: [8, 28], to: [9, 9] },
-      { period: "10 сентября - конец октября", price: 2800, from: [9, 10], to: [10, 31] },
+      { period: "май - 15 июня", price: 2500, from: [5, 1], to: [6, 14] },
+      { period: "15 июня - 15 июля", price: 3000, from: [6, 15], to: [7, 14] },
+      { period: "15 июля - 28 августа", price: 3300, from: [7, 15], to: [8, 27] },
+      { period: "28 августа - 10 сентября", price: 2600, from: [8, 28], to: [9, 9] },
+      { period: "10 сентября - конец октября", price: 2240, from: [9, 10], to: [10, 31] },
     ],
   },
   {
     title: "Номер 4",
     roomIds: ["room-4"],
     prices: [
-      { period: "май - 14 июня", price: 4000, from: [5, 1], to: [6, 14] },
-      { period: "15 июня - 10 июля", price: 5000, from: [6, 15], to: [7, 9] },
-      { period: "10 июля - 28 августа", price: 5375, from: [7, 10], to: [8, 27] },
-      { period: "28 августа - 15 сентября", price: 4500, from: [8, 28], to: [9, 15] },
-      { period: "16 сентября - конец октября", price: 3800, from: [9, 16], to: [10, 31] },
+      { period: "май - 14 июня", price: 3200, from: [5, 1], to: [6, 14] },
+      { period: "15 июня - 10 июля", price: 4000, from: [6, 15], to: [7, 9] },
+      { period: "10 июля - 28 августа", price: 4300, from: [7, 10], to: [8, 27] },
+      { period: "28 августа - 15 сентября", price: 3600, from: [8, 28], to: [9, 15] },
+      { period: "16 сентября - конец октября", price: 3040, from: [9, 16], to: [10, 31] },
     ],
   },
 ];
 
 export const formatPrice = new Intl.NumberFormat("ru-RU").format;
-
-export function getDiscountedPrice(price: number) {
-  return Math.ceil(price * 0.8);
-}
 
 export function getMinimumRoomPrice(roomId: RoomId) {
   const section = priceSections.find((priceSection) => priceSection.roomIds.includes(roomId));
@@ -77,7 +73,7 @@ export function getMinimumRoomPrice(roomId: RoomId) {
     return null;
   }
 
-  return Math.min(...section.prices.map(({ price }) => getDiscountedPrice(price)));
+  return Math.min(...section.prices.map(({ price }) => price));
 }
 
 export function getRoomPriceForDate(roomId: RoomId, date: Date) {
@@ -95,5 +91,5 @@ export function getRoomPriceForDate(roomId: RoomId, date: Date) {
     return monthDay >= fromMonthDay && monthDay <= toMonthDay;
   });
 
-  return price ? getDiscountedPrice(price.price) : null;
+  return price ? price.price : null;
 }

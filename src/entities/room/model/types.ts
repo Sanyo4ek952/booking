@@ -5,7 +5,10 @@ export type Room = {
   name: string;
   shortName: string;
   description: string;
+  fullDescription: string;
   accentClass: string;
   imageUrl: string;
+  gallery: string[];
   capacity: number;
+  amenities: string[];
 };

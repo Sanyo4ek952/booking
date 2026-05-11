@@ -1,9 +1,12 @@
-import { BedDouble, CalendarCheck, LayoutDashboard } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router";
+import { BedDouble, CalendarCheck, LayoutDashboard, Plus } from "lucide-react";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { Button } from "@/shared/ui/Button";
 import { cn } from "@/shared/lib/cn";
 
 export function RootLayout() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-white/70 bg-sand-50/80 backdrop-blur-xl">
@@ -43,6 +46,14 @@ export function RootLayout() {
               <BedDouble className="h-4 w-4" />
               Номера
             </NavLink>
+            {isAdminRoute && (
+              <Button asChild variant="primary" size="sm">
+                <NavLink to="/admin/rooms/new">
+                  <Plus className="h-4 w-4" />
+                  Создать объект
+                </NavLink>
+              </Button>
+            )}
             <Button asChild variant="secondary" size="sm">
               <NavLink to="/admin">
                 <LayoutDashboard className="h-4 w-4" />
