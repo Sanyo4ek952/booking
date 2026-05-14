@@ -38,7 +38,7 @@ export function PublicPage() {
         <EmptyState title="Не удалось загрузить брони" description={error instanceof Error ? error.message : "Проверьте настройки Supabase и RLS-политики."} />
       ) : (
         <div className="grid gap-4">
-          <Card className="p-4 sm:p-5">
+          <Card id="prices" className="scroll-mt-32 p-4 sm:p-5">
             <div>
               <h2 className="text-lg font-semibold text-graphite-900">Цены на номера</h2>
             </div>
