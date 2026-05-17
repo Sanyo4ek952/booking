@@ -70,7 +70,7 @@ function formatDateRange(checkIn: string, checkOut: string) {
 export function RoomDetailsPage() {
   const { roomId } = useParams();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [checkIn, setCheckIn] = useState(todayInputValue());
+  const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(parseISO(todayInputValue())));
@@ -239,6 +239,7 @@ export function RoomDetailsPage() {
                   <div className="mt-2 grid grid-cols-7 gap-1">
                     {calendarDays.map((day) => {
                       const dayValue = format(day, dateInputFormat);
+                      const dayPrice = getRoomPriceForDate(room.id, day);
                       const isCheckIn = checkIn === dayValue;
                       const isCheckOut = checkOut === dayValue;
                       const isInRange = Boolean(checkIn && checkOut && dayValue > checkIn && dayValue < checkOut);
@@ -248,15 +249,27 @@ export function RoomDetailsPage() {
                           key={dayValue}
                           type="button"
                           className={cn(
-                            "h-9 rounded-xl text-sm font-medium text-graphite-800 transition hover:bg-sand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-600",
+                            "flex h-12 flex-col items-center justify-center rounded-xl px-1 text-sm font-medium text-graphite-800 transition hover:bg-sand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-600",
                             !isSameMonth(day, calendarMonth) && "text-graphite-400",
                             isInRange && "bg-sage-50 text-sage-900",
                             (isCheckIn || isCheckOut) && "bg-sage-700 text-white hover:bg-sage-700",
                             isSameDay(day, new Date()) && !isCheckIn && !isCheckOut && "ring-1 ring-sage-600/30",
                           )}
                           onClick={() => updateDateRange(day)}
+                          title={dayPrice ? `${formatPrice(dayPrice)} ₽ за ночь` : undefined}
                         >
-                          {format(day, "d")}
+                          <span>{format(day, "d")}</span>
+                          {dayPrice ? (
+                            <span
+                              className={cn(
+                                "text-[10px] font-semibold leading-none",
+                                isCheckIn || isCheckOut ? "text-white/90" : "text-graphite-500",
+                                !isSameMonth(day, calendarMonth) && !(isCheckIn || isCheckOut) && "text-graphite-400",
+                              )}
+                            >
+                              {formatPrice(dayPrice)}
+                            </span>
+                          ) : null}
                         </button>
                       );
                     })}
