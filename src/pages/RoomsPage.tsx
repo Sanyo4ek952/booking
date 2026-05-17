@@ -14,7 +14,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { rooms } from "@/entities/room";
 import { formatPrice, getMinimumRoomPrice, getRoomPriceForDate, useBookings } from "@/features/bookings";
-import type { Booking } from "@/features/bookings/model/types";
+import { bookingOverlaps } from "@/features/bookings/model/validation";
 import { isSupabaseConfigured } from "@/shared/api/supabase";
 import { todayInputValue } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/Button";
@@ -40,10 +40,6 @@ function formatPublicDate(value: string) {
   return format(parseISO(value), "d MMM yyyy", { locale: ru });
 }
 
-function hasOverlap(booking: Booking, checkIn: string, checkOut: string) {
-  return booking.check_in < checkOut && booking.check_out > checkIn;
-}
-
 export function RoomsPage() {
   const { data: bookings = [], isError, error } = useBookings();
   const today = todayInputValue();
@@ -60,11 +56,22 @@ export function RoomsPage() {
   }, [checkIn, checkOut]);
 
   const visibleRooms = useMemo(() => {
+    const hasSelectedStay = Boolean(checkIn && checkOut);
+
     return rooms
       .map((room) => {
         const roomBookings = bookings.filter((booking) => booking.room_id === room.id && booking.status !== "checked_out");
         const matchesGuests = Number(guests) <= room.capacity;
-        const isAvailable = !checkIn || !checkOut ? true : roomBookings.every((booking) => !hasOverlap(booking, checkIn, checkOut));
+        const isAvailable = hasSelectedStay
+          ? !bookingOverlaps(
+              {
+                room_id: room.id,
+                check_in: checkIn,
+                check_out: checkOut,
+              },
+              roomBookings,
+            )
+          : true;
         const selectedPrice = checkIn ? getRoomPriceForDate(room.id, parseISO(checkIn)) : getMinimumRoomPrice(room.id);
 
         return {
@@ -75,7 +82,7 @@ export function RoomsPage() {
           selectedPrice,
         };
       })
-      .filter((room) => room.matchesGuests)
+      .filter((room) => room.matchesGuests && (!hasSelectedStay || room.isAvailable))
       .sort((left, right) => Number(right.isAvailable) - Number(left.isAvailable));
   }, [bookings, checkIn, checkOut, guests]);
 
@@ -180,7 +187,13 @@ export function RoomsPage() {
       </section>
 
       <section className="grid gap-5">
-        {visibleRooms.map(({ room, isAvailable, previewImages, selectedPrice }) => (
+        {visibleRooms.length === 0 ? (
+          <EmptyState
+            title="На выбранные даты свободных номеров нет"
+            description="Попробуйте изменить даты проживания или количество гостей, и мы сразу покажем доступные варианты."
+          />
+        ) : (
+          visibleRooms.map(({ room, isAvailable, previewImages, selectedPrice }) => (
           <Card key={room.id} className="overflow-hidden p-3 sm:p-5">
             <div className="grid gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
               <div className="grid gap-3">
@@ -260,7 +273,8 @@ export function RoomsPage() {
               </div>
             </div>
           </Card>
-        ))}
+          ))
+        )}
       </section>
 
       <section className="grid gap-4 rounded-[28px] border border-white/80 bg-white/80 p-5 shadow-lg shadow-stone-900/5 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
