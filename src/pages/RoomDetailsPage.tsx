@@ -13,8 +13,8 @@ import {
   startOfWeek,
 } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ArrowLeft, Banknote, CalendarDays, Check, ChevronLeft, ChevronRight, Users } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Banknote, BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router";
 import { getSelectedAmenityCategories, roomById, type RoomId } from "@/entities/room";
 import { formatPrice, getMinimumRoomPrice, getRoomPriceForDate } from "@/features/bookings";
@@ -74,6 +74,7 @@ export function RoomDetailsPage() {
   const [checkOut, setCheckOut] = useState("");
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(parseISO(todayInputValue())));
+  const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   if (!isRoomId(roomId)) {
     return <Navigate to="/rooms" replace />;
@@ -91,6 +92,17 @@ export function RoomDetailsPage() {
   const selectedNightPrice = checkIn ? getRoomPriceForDate(room.id, parseISO(checkIn)) : minimumPrice;
   const calendarDays = getDatePickerDays(calendarMonth);
   const selectedAmenityCategories = getSelectedAmenityCategories(room.amenities);
+  const hasCustomDetailSections = Boolean(room.detailSections && room.detailSections.length > 0);
+
+  useEffect(() => {
+    const activeThumbnail = thumbnailRefs.current[activeImageIndex];
+
+    activeThumbnail?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeImageIndex]);
 
   const updateDateRange = (selectedDate: Date) => {
     const selectedValue = format(selectedDate, dateInputFormat);
@@ -141,20 +153,28 @@ export function RoomDetailsPage() {
             </div>
 
             {gallery.length > 1 && (
-              <div className="grid grid-cols-3 gap-3">
-                {gallery.map((image, index) => (
-                  <button
-                    key={image}
-                    type="button"
-                    className={`overflow-hidden rounded-xl border-2 bg-sand-100 transition ${
-                      index === activeImageIndex ? "border-sage-700" : "border-transparent hover:border-sand-200"
-                    }`}
-                    onClick={() => setActiveImageIndex(index)}
-                    aria-label={`Открыть фото ${index + 1}`}
-                  >
-                    <img src={image} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
-                  </button>
-                ))}
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[rgba(251,247,240,0.95)] to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[rgba(251,247,240,0.95)] to-transparent" />
+                <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {gallery.map((image, index) => (
+                    <button
+                      key={image}
+                      ref={(element) => {
+                        thumbnailRefs.current[index] = element;
+                      }}
+                      type="button"
+                      className={`aspect-[4/3] w-28 shrink-0 snap-center overflow-hidden rounded-xl border-2 bg-sand-100 transition sm:w-32 ${
+                        index === activeImageIndex ? "border-sage-700" : "border-transparent hover:border-sand-200"
+                      }`}
+                      onClick={() => setActiveImageIndex(index)}
+                      aria-label={`Открыть фото ${index + 1}`}
+                      aria-pressed={index === activeImageIndex}
+                    >
+                      <img src={image} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </section>
@@ -167,7 +187,43 @@ export function RoomDetailsPage() {
             </div>
 
             <div className="grid gap-5">
-              {selectedAmenityCategories.length > 0 ? (
+              {room.sleepingPlaces && room.sleepingPlaces.length > 0 ? (
+                <div className="grid gap-3">
+                  <div>
+                    <h2 className="text-xl font-semibold text-graphite-900">Спальные места</h2>
+                    {room.sleepingPlacesSummary ? <p className="mt-1 text-sm text-graphite-500">{room.sleepingPlacesSummary}</p> : null}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {room.sleepingPlaces.map((place) => (
+                      <div key={place.id} className="rounded-xl bg-white/70 p-4 text-graphite-700 shadow-sm shadow-stone-900/5">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <BedDouble className="h-4 w-4" />
+                          <span>&times; {place.quantity}</span>
+                        </div>
+                        <div className="mt-2 text-sm font-medium">{place.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {hasCustomDetailSections ? (
+                room.detailSections?.map((section) => (
+                  <div key={section.id} className="grid gap-3">
+                    <h2 className="text-xl font-semibold text-graphite-900">{section.title}</h2>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {section.items.map((item) => (
+                        <div key={item} className="flex items-center gap-3 rounded-xl bg-white/70 p-3 text-sm font-medium text-graphite-700 shadow-sm shadow-stone-900/5">
+                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-sage-700 text-white">
+                            <Check className="h-4 w-4" />
+                          </span>
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : selectedAmenityCategories.length > 0 ? (
                 selectedAmenityCategories.map((category) => (
                   <div key={category.id} className="grid gap-3">
                     <h2 className="text-xl font-semibold text-graphite-900">{category.title}</h2>
