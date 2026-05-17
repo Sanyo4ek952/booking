@@ -1,11 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider } from "react-router";
-import { ToastProvider } from "@/shared/ui/Toast";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import { AdminPage } from "@/pages/AdminPage";
 import { CreateRoomPage } from "@/pages/CreateRoomPage";
 import { PublicPage } from "@/pages/PublicPage";
 import { RoomDetailsPage } from "@/pages/RoomDetailsPage";
 import { RoomsPage } from "@/pages/RoomsPage";
+import { ToastProvider } from "@/shared/ui/Toast";
 import { RootLayout } from "./RootLayout";
 
 const queryClient = new QueryClient({
@@ -22,10 +22,11 @@ const router = createBrowserRouter([
     path: "/",
     element: <RootLayout />,
     children: [
-      { index: true, element: <PublicPage /> },
+      { index: true, element: <Navigate to="/admin/public" replace /> },
       { path: "rooms", element: <RoomsPage /> },
       { path: "rooms/:roomId", element: <RoomDetailsPage /> },
       { path: "admin", element: <AdminPage /> },
+      { path: "admin/public", element: <PublicPage /> },
       { path: "admin/rooms/new", element: <CreateRoomPage /> },
     ],
   },

@@ -3,15 +3,16 @@ import {
   Bell,
   CalendarDays,
   ChevronDown,
+  ExternalLink,
+  Globe2,
   House,
   LayoutDashboard,
   Plus,
-  Tag,
   UserRound,
 } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router";
-import { Button } from "@/shared/ui/Button";
 import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui/Button";
 
 type NavItem = {
   href: string;
@@ -20,63 +21,63 @@ type NavItem = {
   isActive: (pathname: string, hash: string) => boolean;
 };
 
-const navItems: NavItem[] = [
+const adminNavItems: NavItem[] = [
   {
-    href: "/",
-    label: "Календарь",
+    href: "/admin",
+    label: "Бронирования",
     icon: CalendarDays,
-    isActive: (pathname, hash) => pathname === "/" && hash !== "#prices",
+    isActive: (pathname) => pathname === "/admin",
   },
+  {
+    href: "/admin/public",
+    label: "Публичная страница",
+    icon: Globe2,
+    isActive: (pathname) => pathname.startsWith("/admin/public"),
+  },
+];
+
+const publicNavItems: NavItem[] = [
   {
     href: "/rooms",
     label: "Номера",
     icon: BedDouble,
-    isActive: (pathname) => pathname.startsWith("/rooms"),
+    isActive: (pathname) => pathname === "/rooms" || pathname.startsWith("/rooms/"),
   },
   {
-    href: "/#prices",
-    label: "Цены",
-    icon: Tag,
-    isActive: (pathname, hash) => pathname === "/" && hash === "#prices",
-  },
-  {
-    href: "/admin",
+    href: "/admin/public",
     label: "Админ",
     icon: LayoutDashboard,
     isActive: (pathname) => pathname.startsWith("/admin"),
   },
 ];
 
-function getHeaderSubtitle(pathname: string, hash: string) {
+function getHeaderSubtitle(pathname: string) {
+  if (pathname.startsWith("/admin/public")) {
+    return "Управление публичной ссылкой";
+  }
+
   if (pathname.startsWith("/admin")) {
     return "Управление бронированиями";
   }
 
   if (pathname.startsWith("/rooms/")) {
-    return "Описание и удобства";
+    return "Карточка номера для гостя";
   }
 
-  if (pathname.startsWith("/rooms")) {
-    return "Просмотр номеров";
-  }
-
-  if (hash === "#prices") {
-    return "Тарифы и сезонные цены";
-  }
-
-  return "Управление номерами";
+  return "Публичная витрина для гостей";
 }
 
 export function RootLayout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
-  const headerSubtitle = getHeaderSubtitle(location.pathname, location.hash);
+  const headerSubtitle = getHeaderSubtitle(location.pathname);
+  const navItems = isAdminRoute ? adminNavItems : publicNavItems;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(247,239,228,0.92)_45%,rgba(251,247,240,0.88))]">
       <header className="sticky top-0 z-30 border-b border-sand-200/80 bg-sand-50/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex min-w-0 items-center gap-3">
+          <Link to={isAdminRoute ? "/admin/public" : "/rooms"} className="flex min-w-0 items-center gap-3">
             <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-graphite-900 text-white shadow-[0_14px_28px_rgba(32,33,31,0.18)]">
               <House className="h-6 w-6" />
             </div>
@@ -90,20 +91,32 @@ export function RootLayout() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              to="/admin"
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
-              aria-label="Админ панель"
-            >
-              <Bell className="h-5 w-5" />
-            </Link>
-            <Link
-              to="/rooms"
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
-              aria-label="Номера"
-            >
-              <UserRound className="h-5 w-5" />
-            </Link>
+            {isAdminRoute ? (
+              <>
+                <Link
+                  to="/rooms"
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
+                  aria-label="Открыть публичную страницу"
+                >
+                  <ExternalLink className="h-5 w-5" />
+                </Link>
+                <Link
+                  to="/admin"
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
+                  aria-label="Открыть бронирования"
+                >
+                  <Bell className="h-5 w-5" />
+                </Link>
+              </>
+            ) : (
+              <Link
+                to="/admin/public"
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
+                aria-label="Перейти в админку"
+              >
+                <UserRound className="h-5 w-5" />
+              </Link>
+            )}
           </div>
         </div>
 
@@ -147,7 +160,7 @@ export function RootLayout() {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-sand-200/90 bg-sand-50/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl sm:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+        <div className={`mx-auto grid max-w-md gap-1 ${navItems.length === 2 ? "grid-cols-2" : "grid-cols-4"}`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.isActive(location.pathname, location.hash);
