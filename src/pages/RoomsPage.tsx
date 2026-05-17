@@ -101,7 +101,7 @@ export function RoomsPage() {
 
   return (
     <div className="grid gap-8">
-      <section className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(251,247,240,0.9))] p-4 shadow-xl shadow-stone-900/7 sm:p-8">
+      <section className="relative z-20 rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(251,247,240,0.9))] p-4 shadow-xl shadow-stone-900/7 sm:p-8">
         <div className="flex flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-3 rounded-2xl bg-[#edf7f2] px-4 py-3 text-sage-700">
             <Users className="h-5 w-5" />
@@ -149,7 +149,7 @@ export function RoomsPage() {
               </p>
             </div>
 
-            <Card id="prices" className="scroll-mt-32 p-3 sm:p-5">
+            <Card id="prices" className="relative z-30 scroll-mt-32 p-3 sm:p-5">
               <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-wide text-graphite-500">Даты проживания</div>
@@ -186,7 +186,7 @@ export function RoomsPage() {
         </div>
       </section>
 
-      <section className="grid gap-5">
+      <section className="relative z-0 grid gap-5">
         {visibleRooms.length === 0 ? (
           <EmptyState
             title="На выбранные даты свободных номеров нет"

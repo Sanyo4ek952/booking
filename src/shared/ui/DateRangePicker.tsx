@@ -90,7 +90,7 @@ export function DateRangePicker({
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative", isOpen && "z-50", className)}>
       <button
         id={id}
         type="button"
@@ -105,7 +105,7 @@ export function DateRangePicker({
       </button>
 
       {isOpen && (
-        <div className={cn("absolute left-0 right-0 top-full z-20 mt-2 rounded-2xl border border-sand-200 bg-white p-3 shadow-xl shadow-graphite-900/10", panelClassName)}>
+        <div className={cn("absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-sand-200 bg-white p-3 shadow-xl shadow-graphite-900/10", panelClassName)}>
           <div className="mb-3 flex items-center justify-between gap-2">
             <Button type="button" variant="secondary" size="icon" onClick={() => setCalendarMonth((date) => addMonths(date, -1))} aria-label="Предыдущий месяц">
               <ChevronLeft className="h-4 w-4" />
