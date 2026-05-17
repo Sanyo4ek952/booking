@@ -12,6 +12,12 @@
   --color-sage-700: #315f54;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -19,6 +25,7 @@
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, rgba(234, 220, 203, 0.8), transparent 34rem),
     linear-gradient(180deg, #fbf7f0 0%, #f7efe4 52%, #fffaf3 100%);

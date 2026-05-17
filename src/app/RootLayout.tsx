@@ -1,3 +1,4 @@
+import { useLayoutEffect } from "react";
 import {
   BedDouble,
   Bell,
@@ -67,6 +68,16 @@ function getHeaderSubtitle(pathname: string) {
   return "Публичная витрина для гостей";
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
+}
+
 export function RootLayout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -75,8 +86,9 @@ export function RootLayout() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(247,239,228,0.92)_45%,rgba(251,247,240,0.88))]">
+      <ScrollToTop />
       <header className="sticky top-0 z-30 border-b border-sand-200/80 bg-sand-50/88 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
           <Link to={isAdminRoute ? "/admin" : "/rooms"} className="flex min-w-0 items-center gap-3">
             <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-graphite-900 text-white shadow-[0_14px_28px_rgba(32,33,31,0.18)]">
               <House className="h-6 w-6" />
@@ -155,11 +167,11 @@ export function RootLayout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-8 lg:px-8">
+      <main className="mx-auto max-w-7xl px-3 py-5 pb-28 sm:px-6 sm:py-8 sm:pb-8 lg:px-8">
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-sand-200/90 bg-sand-50/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-sand-200/90 bg-sand-50/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl sm:hidden">
         <div className={`mx-auto grid max-w-md gap-1 ${navItems.length === 2 ? "grid-cols-2" : "grid-cols-4"}`}>
           {navItems.map((item) => {
             const Icon = item.icon;

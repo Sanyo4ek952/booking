@@ -1,13 +1,17 @@
 import { compareAsc, format, parseISO, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Copy, ExternalLink, Globe2 } from "lucide-react";
+import { useMemo } from "react";
+import { Link } from "react-router";
 import { rooms } from "@/entities/room";
 import { BookingCalendar, formatPrice, priceSections, useBookings } from "@/features/bookings";
 import type { Booking } from "@/features/bookings/model/types";
 import { isSupabaseConfigured } from "@/shared/api/supabase";
+import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { EnvNotice } from "@/shared/ui/EnvNotice";
+import { useToast } from "@/shared/ui/useToast";
 
 function getNearestDate(bookings: Booking[], field: "check_in" | "check_out") {
   const today = startOfDay(new Date());
@@ -19,7 +23,15 @@ function getNearestDate(bookings: Booking[], field: "check_in" | "check_out") {
 }
 
 export function PublicPage() {
+  const { toast } = useToast();
   const { data: bookings = [], isLoading, isError, error } = useBookings();
+  const publicUrl = useMemo(() => {
+    if (typeof window === "undefined") {
+      return "/rooms";
+    }
+
+    return `${window.location.origin}/rooms`;
+  }, []);
   const roomActualRows = rooms.map((room) => {
     const roomBookings = bookings.filter((booking) => booking.room_id === room.id);
 
@@ -41,6 +53,45 @@ export function PublicPage() {
         />
       ) : (
         <div className="grid gap-4">
+          <Card className="p-4 sm:p-5">
+            <div className="grid gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-graphite-900">Публичная ссылка</h2>
+                <p className="text-sm text-graphite-500">Скопируйте ссылку и отправьте её гостю для просмотра номеров.</p>
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
+                <div className="flex min-h-12 items-center gap-3 rounded-2xl border border-sand-200 bg-sand-50 px-4 text-sm text-graphite-900">
+                  <Globe2 className="h-4 w-4 shrink-0 text-sage-700" />
+                  <span className="truncate">{publicUrl}</span>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(publicUrl);
+                      toast({ title: "Ссылка скопирована", description: "Публичную страницу можно отправлять пользователю." });
+                    } catch {
+                      toast({ title: "Не удалось скопировать", description: "Скопируйте ссылку вручную из поля.", variant: "error" });
+                    }
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                  Скопировать
+                </Button>
+
+                <Button asChild>
+                  <Link to="/rooms">
+                    Открыть
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+
           <Card id="prices" className="scroll-mt-32 p-4 sm:p-5">
             <div>
               <h2 className="text-lg font-semibold text-graphite-900">Цены на номера</h2>

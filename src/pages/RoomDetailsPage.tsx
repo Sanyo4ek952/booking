@@ -134,18 +134,22 @@ export function RoomDetailsPage() {
         </Link>
       </Button>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-        <div className="grid gap-6">
-          <section className="grid gap-4">
-            <div className="relative overflow-hidden rounded-2xl bg-sand-100">
-              <img src={gallery[activeImageIndex]} alt={room.name} className="aspect-[16/10] w-full object-cover" />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start sm:gap-6">
+        <div className="grid gap-4 sm:gap-6">
+          <section className="grid gap-2 sm:gap-4">
+            <div className="relative w-full overflow-hidden rounded-xl bg-sand-100 sm:rounded-2xl">
+              <img
+                src={gallery[activeImageIndex]}
+                alt={room.name}
+                className="aspect-[4/3] max-h-[42svh] w-full object-cover object-center sm:aspect-[16/10] sm:max-h-none"
+              />
 
               {gallery.length > 1 && (
                 <>
-                  <Button type="button" variant="secondary" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2" onClick={showPreviousImage} aria-label="Предыдущее фото">
+                  <Button type="button" variant="secondary" size="icon" className="absolute left-3 top-1/2 h-9 w-9 -translate-y-1/2 sm:left-4 sm:h-10 sm:w-10" onClick={showPreviousImage} aria-label="Предыдущее фото">
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="secondary" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2" onClick={showNextImage} aria-label="Следующее фото">
+                  <Button type="button" variant="secondary" size="icon" className="absolute right-3 top-1/2 h-9 w-9 -translate-y-1/2 sm:right-4 sm:h-10 sm:w-10" onClick={showNextImage} aria-label="Следующее фото">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </>
@@ -154,9 +158,9 @@ export function RoomDetailsPage() {
 
             {gallery.length > 1 && (
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[rgba(251,247,240,0.95)] to-transparent" />
-                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[rgba(251,247,240,0.95)] to-transparent" />
-                <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-[rgba(251,247,240,0.95)] to-transparent sm:w-8" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-[rgba(251,247,240,0.95)] to-transparent sm:w-8" />
+                <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 sm:pb-2 [&::-webkit-scrollbar]:hidden">
                   {gallery.map((image, index) => (
                     <button
                       key={image}
@@ -164,7 +168,7 @@ export function RoomDetailsPage() {
                         thumbnailRefs.current[index] = element;
                       }}
                       type="button"
-                      className={`aspect-[4/3] w-28 shrink-0 snap-center overflow-hidden rounded-xl border-2 bg-sand-100 transition sm:w-32 ${
+                      className={`aspect-[4/3] w-16 shrink-0 snap-center overflow-hidden rounded-lg border-2 bg-sand-100 transition sm:w-32 sm:rounded-xl ${
                         index === activeImageIndex ? "border-sage-700" : "border-transparent hover:border-sand-200"
                       }`}
                       onClick={() => setActiveImageIndex(index)}
@@ -256,7 +260,7 @@ export function RoomDetailsPage() {
         </div>
 
         <aside className="lg:sticky lg:top-24">
-          <Card className="grid gap-5 p-5 sm:p-6">
+          <Card className="grid gap-5 p-4 sm:p-6">
             <div>
               <h2 className="text-xl font-semibold text-graphite-900">Расчет проживания</h2>
               <p className="mt-1 text-sm text-graphite-500">Выберите даты заезда и выезда.</p>

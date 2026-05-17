@@ -19,9 +19,10 @@ import { isSupabaseConfigured } from "@/shared/api/supabase";
 import { todayInputValue } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
+import { DateRangePicker } from "@/shared/ui/DateRangePicker";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { EnvNotice } from "@/shared/ui/EnvNotice";
-import { Input, NativeSelect } from "@/shared/ui/Form";
+import { NativeSelect } from "@/shared/ui/Form";
 
 const heroBenefits = [
   { icon: Sparkles, title: "Быстрое бронирование" },
@@ -93,7 +94,7 @@ export function RoomsPage() {
 
   return (
     <div className="grid gap-8">
-      <section className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(251,247,240,0.9))] p-5 shadow-xl shadow-stone-900/7 sm:p-8">
+      <section className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(251,247,240,0.9))] p-4 shadow-xl shadow-stone-900/7 sm:p-8">
         <div className="flex flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-3 rounded-2xl bg-[#edf7f2] px-4 py-3 text-sage-700">
             <Users className="h-5 w-5" />
@@ -103,7 +104,7 @@ export function RoomsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-6 rounded-[28px] border border-sand-200 bg-white/80 p-5 sm:p-6">
+          <div className="flex flex-col gap-6 rounded-[28px] border border-sand-200 bg-white/80 p-4 sm:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex items-center gap-3">
@@ -124,7 +125,7 @@ export function RoomsPage() {
 
               <div className="flex flex-wrap items-center gap-3">
                 {heroBenefits.map(({ icon: Icon, title }) => (
-                  <div key={title} className="flex items-center gap-3 rounded-2xl bg-sand-50 px-4 py-3 text-sm font-medium text-graphite-700">
+                  <div key={title} className="flex items-center gap-3 rounded-2xl bg-sand-50 px-3 py-2.5 text-sm font-medium text-graphite-700 sm:px-4 sm:py-3">
                     <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-amber-600 shadow-sm">
                       <Icon className="h-4 w-4" />
                     </span>
@@ -141,15 +142,21 @@ export function RoomsPage() {
               </p>
             </div>
 
-            <Card id="prices" className="scroll-mt-32 p-4 sm:p-5">
-              <div className="grid gap-4 md:grid-cols-4">
+            <Card id="prices" className="scroll-mt-32 p-3 sm:p-5">
+              <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-graphite-500">Заезд</div>
-                  <Input type="date" value={checkIn} min={today} onChange={(event) => setCheckIn(event.target.value)} className="mt-2" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-graphite-500">Выезд</div>
-                  <Input type="date" value={checkOut} min={checkIn || today} onChange={(event) => setCheckOut(event.target.value)} className="mt-2" />
+                  <div className="text-xs font-semibold uppercase tracking-wide text-graphite-500">Даты проживания</div>
+                  <DateRangePicker
+                    checkIn={checkIn}
+                    checkOut={checkOut}
+                    minDate={today}
+                    compact
+                    className="mt-2"
+                    onChange={({ checkIn: nextCheckIn, checkOut: nextCheckOut }) => {
+                      setCheckIn(nextCheckIn);
+                      setCheckOut(nextCheckOut);
+                    }}
+                  />
                 </div>
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-wide text-graphite-500">Гости</div>
@@ -174,7 +181,7 @@ export function RoomsPage() {
 
       <section className="grid gap-5">
         {visibleRooms.map(({ room, isAvailable, previewImages, selectedPrice }) => (
-          <Card key={room.id} className="overflow-hidden p-4 sm:p-5">
+          <Card key={room.id} className="overflow-hidden p-3 sm:p-5">
             <div className="grid gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
               <div className="grid gap-3">
                 <div className="overflow-hidden rounded-2xl bg-sand-100">
@@ -204,8 +211,7 @@ export function RoomsPage() {
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-graphite-500">
                       <span className="inline-flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        до {room.capacity} гостей
+                        <Users className="h-4 w-4" />до {room.capacity} гостей
                       </span>
                       <span className="inline-flex items-center gap-2">
                         <CalendarDays className="h-4 w-4" />
