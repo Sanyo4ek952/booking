@@ -24,15 +24,15 @@ type NavItem = {
 const adminNavItems: NavItem[] = [
   {
     href: "/admin",
-    label: "Бронирования",
-    icon: CalendarDays,
+    label: "Публичная страница",
+    icon: Globe2,
     isActive: (pathname) => pathname === "/admin",
   },
   {
-    href: "/admin/public",
-    label: "Публичная страница",
-    icon: Globe2,
-    isActive: (pathname) => pathname.startsWith("/admin/public"),
+    href: "/admin/bookings",
+    label: "Бронирования",
+    icon: CalendarDays,
+    isActive: (pathname) => pathname.startsWith("/admin/bookings"),
   },
 ];
 
@@ -44,7 +44,7 @@ const publicNavItems: NavItem[] = [
     isActive: (pathname) => pathname === "/rooms" || pathname.startsWith("/rooms/"),
   },
   {
-    href: "/admin/public",
+    href: "/admin",
     label: "Админ",
     icon: LayoutDashboard,
     isActive: (pathname) => pathname.startsWith("/admin"),
@@ -52,7 +52,7 @@ const publicNavItems: NavItem[] = [
 ];
 
 function getHeaderSubtitle(pathname: string) {
-  if (pathname.startsWith("/admin/public")) {
+  if (pathname === "/admin") {
     return "Управление публичной ссылкой";
   }
 
@@ -77,7 +77,7 @@ export function RootLayout() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(247,239,228,0.92)_45%,rgba(251,247,240,0.88))]">
       <header className="sticky top-0 z-30 border-b border-sand-200/80 bg-sand-50/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
-          <Link to={isAdminRoute ? "/admin/public" : "/rooms"} className="flex min-w-0 items-center gap-3">
+          <Link to={isAdminRoute ? "/admin" : "/rooms"} className="flex min-w-0 items-center gap-3">
             <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-graphite-900 text-white shadow-[0_14px_28px_rgba(32,33,31,0.18)]">
               <House className="h-6 w-6" />
             </div>
@@ -101,7 +101,7 @@ export function RootLayout() {
                   <ExternalLink className="h-5 w-5" />
                 </Link>
                 <Link
-                  to="/admin"
+                  to="/admin/bookings"
                   className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
                   aria-label="Открыть бронирования"
                 >
@@ -110,7 +110,7 @@ export function RootLayout() {
               </>
             ) : (
               <Link
-                to="/admin/public"
+                to="/admin"
                 className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
                 aria-label="Перейти в админку"
               >
