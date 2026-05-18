@@ -11,7 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { rooms } from "@/entities/room";
 import { formatPrice, getMinimumRoomPrice, getRoomPriceForDate, useBookings } from "@/features/bookings";
 import { bookingOverlaps } from "@/features/bookings/model/validation";
@@ -40,12 +40,17 @@ function formatPublicDate(value: string) {
 
 export function RoomsPage() {
   const { data: bookings = [], isError, error } = useBookings();
+  const navigate = useNavigate();
   const today = todayInputValue();
   const checkIn = today;
   const checkOut = format(addDays(parseISO(today), 3), "yyyy-MM-dd");
   const guests = "2";
 
   const stayNights = Math.max(0, differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn)));
+
+  const isInteractiveTarget = (target: EventTarget | null) =>
+    target instanceof HTMLElement &&
+    Boolean(target.closest("a, button, input, select, textarea, [role='button'], [role='link']"));
 
   const visibleRooms = useMemo(() => {
     const hasSelectedStay = Boolean(checkIn && checkOut);
@@ -147,7 +152,30 @@ export function RoomsPage() {
           />
         ) : (
           visibleRooms.map(({ room, isAvailable, previewImages, selectedPrice }) => (
-          <Card key={room.id} className="overflow-hidden p-3 sm:p-5">
+          <Card
+            key={room.id}
+            className="cursor-pointer overflow-hidden p-3 transition hover:border-sand-200 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500 focus-visible:ring-offset-2 sm:p-5"
+            role="link"
+            tabIndex={0}
+            onClick={(event) => {
+              if (isInteractiveTarget(event.target)) {
+                return;
+              }
+
+              navigate(`/rooms/${room.id}?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`);
+            }}
+            onKeyDown={(event) => {
+              if (isInteractiveTarget(event.target)) {
+                return;
+              }
+
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate(`/rooms/${room.id}?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`);
+              }
+            }}
+            aria-label={`Открыть ${room.name}`}
+          >
             <div className="grid gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
               <div className="grid gap-3">
                 <div className="overflow-hidden rounded-2xl bg-sand-100">
