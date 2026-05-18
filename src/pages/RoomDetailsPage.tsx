@@ -363,8 +363,8 @@ export function RoomDetailsPage() {
       </Button>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start sm:gap-6">
-        <div className="grid gap-4 sm:gap-6">
-          <section className="grid gap-2 sm:gap-4">
+        <div className="grid min-w-0 gap-4 sm:gap-6">
+          <section className="grid min-w-0 gap-2 sm:gap-4">
             <div className="relative w-full overflow-hidden rounded-xl bg-sand-100 sm:rounded-2xl">
               <img
                 src={gallery[activeImageIndex]}
@@ -399,10 +399,10 @@ export function RoomDetailsPage() {
             </div>
 
             {gallery.length > 1 && (
-              <div className="relative">
+              <div className="relative hidden sm:block">
                 <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-[rgba(251,247,240,0.95)] to-transparent sm:w-8" />
                 <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-[rgba(251,247,240,0.95)] to-transparent sm:w-8" />
-                <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 sm:pb-2 [&::-webkit-scrollbar]:hidden">
+                <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {gallery.map((image, index) => (
                     <button
                       key={image}
@@ -410,7 +410,7 @@ export function RoomDetailsPage() {
                         thumbnailRefs.current[index] = element;
                       }}
                       type="button"
-                      className={`aspect-[4/3] w-16 shrink-0 snap-center overflow-hidden rounded-lg border-2 bg-sand-100 transition sm:w-32 sm:rounded-xl ${
+                      className={`aspect-[4/3] w-32 shrink-0 snap-center overflow-hidden rounded-xl border-2 bg-sand-100 transition ${
                         index === activeImageIndex ? "border-sage-700" : "border-transparent hover:border-sand-200"
                       }`}
                       onClick={() => setActiveImageIndex(index)}
@@ -425,15 +425,15 @@ export function RoomDetailsPage() {
             )}
           </section>
 
-          <section className="grid gap-5 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(251,247,240,0.92))] p-5 shadow-xl shadow-stone-900/6 sm:p-7">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-3">
+          <section className="grid min-w-0 gap-5 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(251,247,240,0.92))] p-5 shadow-xl shadow-stone-900/6 sm:p-7">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-lg ${room.accentClass}`}>
                     <BedDouble className="h-5 w-5" />
                   </span>
-                  <div>
-                    <h1 className="text-3xl font-semibold text-graphite-900 sm:text-4xl">{room.name}</h1>
+                  <div className="min-w-0">
+                    <h1 className="break-words text-3xl font-semibold text-graphite-900 sm:text-4xl">{room.name}</h1>
                     <p className="text-sm text-graphite-500">Подробности и условия проживания</p>
                   </div>
                 </div>
@@ -452,7 +452,7 @@ export function RoomDetailsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-white/80 px-4 py-3 text-right shadow-sm">
+              <div className="shrink-0 rounded-2xl bg-white/80 px-4 py-3 text-left shadow-sm sm:text-right">
                 <div className="text-sm text-graphite-500">От</div>
                 <div className="text-2xl font-semibold text-graphite-900">
                   {minimumPrice ? `${formatPrice(minimumPrice)} ₽` : "—"}
@@ -592,8 +592,8 @@ export function RoomDetailsPage() {
           </section>
         </div>
 
-        <aside className="lg:sticky lg:top-24">
-          <Card className="grid gap-5 p-4 sm:p-6">
+        <aside className="min-w-0 lg:sticky lg:top-24">
+          <Card className="grid min-w-0 gap-5 p-4 sm:p-6">
             <div>
               <h2 className="text-xl font-semibold text-graphite-900">Расчет проживания</h2>
               <p className="mt-1 text-sm text-graphite-500">Выберите даты заезда и выезда.</p>
@@ -612,7 +612,7 @@ export function RoomDetailsPage() {
               </button>
 
               {isDatePickerOpen && (
-                <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-2xl border border-sand-200 bg-white p-3 shadow-xl shadow-graphite-900/10">
+                <div className="absolute left-0 right-0 top-full z-20 mt-2 w-full max-w-full overflow-hidden rounded-2xl border border-sand-200 bg-white p-3 shadow-xl shadow-graphite-900/10">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <Button type="button" variant="secondary" size="icon" onClick={() => setCalendarMonth((date) => addMonths(date, -1))} aria-label="Предыдущий месяц">
                       <ChevronLeft className="h-4 w-4" />
