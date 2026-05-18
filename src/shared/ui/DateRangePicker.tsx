@@ -38,6 +38,9 @@ type DateRangePickerProps = {
   triggerClassName?: string;
   panelClassName?: string;
   summaryClassName?: string;
+  isDayDisabled?: (date: Date, context: { checkIn: string; checkOut: string }) => boolean;
+  getDayClassName?: (date: Date, context: { checkIn: string; checkOut: string }) => string | undefined;
+  getDayLabelClassName?: (date: Date, context: { checkIn: string; checkOut: string }) => string | undefined;
   getDayLabel?: (date: Date) => string | null;
   getDayTitle?: (date: Date) => string | undefined;
   showSummary?: boolean;
@@ -55,6 +58,9 @@ export function DateRangePicker({
   triggerClassName,
   panelClassName,
   summaryClassName,
+  isDayDisabled,
+  getDayClassName,
+  getDayLabelClassName,
   getDayLabel,
   getDayTitle,
   showSummary = true,
@@ -67,8 +73,17 @@ export function DateRangePicker({
 
   const handleSelect = (selectedDate: Date) => {
     const selectedValue = format(selectedDate, dateInputFormat);
+    const isUnavailable = Boolean(isDayDisabled?.(selectedDate, { checkIn, checkOut }));
+    const canRestartSelection = Boolean(isUnavailable && checkIn && !checkOut && selectedValue > checkIn);
 
     if (minDate && selectedValue < minDate) {
+      return;
+    }
+
+    if (isUnavailable) {
+      if (canRestartSelection) {
+        onChange({ checkIn: selectedValue, checkOut: "" });
+      }
       return;
     }
 
@@ -121,6 +136,8 @@ export function DateRangePicker({
               const isCheckOut = checkOut === dayValue;
               const isInRange = Boolean(checkIn && checkOut && dayValue > checkIn && dayValue < checkOut);
               const isBeforeMinDate = Boolean(minDate && dayValue < minDate);
+              const isUnavailable = Boolean(isDayDisabled?.(day, { checkIn, checkOut }));
+              const canRestartSelection = Boolean(isUnavailable && checkIn && !checkOut && dayValue > checkIn);
               const dayLabel = getDayLabel?.(day);
 
               return (
@@ -130,15 +147,16 @@ export function DateRangePicker({
                   className={cn(
                     "rounded-xl text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-600",
                     compact ? "h-9" : "flex h-12 flex-col items-center justify-center px-1",
-                    isBeforeMinDate ? "cursor-not-allowed text-graphite-300" : "text-graphite-800 hover:bg-sand-100",
-                    !isSameMonth(day, calendarMonth) && !isBeforeMinDate && "text-graphite-400",
+                    isBeforeMinDate || (isUnavailable && !canRestartSelection) ? "cursor-not-allowed text-graphite-300" : "text-graphite-800 hover:bg-sand-100",
+                    !isSameMonth(day, calendarMonth) && !isBeforeMinDate && !isUnavailable && "text-graphite-400",
+                    isUnavailable && getDayClassName?.(day, { checkIn, checkOut }),
                     isInRange && "bg-sage-50 text-sage-900",
                     (isCheckIn || isCheckOut) && "bg-sage-700 text-white hover:bg-sage-700",
                     isSameDay(day, new Date()) && !isCheckIn && !isCheckOut && !isBeforeMinDate && "ring-1 ring-sage-600/30",
                   )}
                   onClick={() => handleSelect(day)}
                   title={getDayTitle?.(day)}
-                  disabled={isBeforeMinDate}
+                  disabled={isBeforeMinDate || (isUnavailable && !canRestartSelection)}
                 >
                   <span>{format(day, "d")}</span>
                   {!compact && dayLabel ? (
@@ -147,6 +165,7 @@ export function DateRangePicker({
                         "text-[10px] font-semibold leading-none",
                         isCheckIn || isCheckOut ? "text-white/90" : "text-graphite-500",
                         !isSameMonth(day, calendarMonth) && !(isCheckIn || isCheckOut) && "text-graphite-400",
+                        getDayLabelClassName?.(day, { checkIn, checkOut }),
                       )}
                     >
                       {dayLabel}

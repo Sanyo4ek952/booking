@@ -134,7 +134,7 @@ export const rooms: Room[] = [
     shortName: "2",
     description: sharedDescription,
     fullDescription: sharedFullDescription,
-    accentClass: "bg-[#3f6f9f]",
+    accentClass: "bg-ocean-600",
     imageUrl: "/rooms/room-2.jpg",
     gallery: [
       "/rooms/room-2.jpg",
@@ -156,7 +156,7 @@ export const rooms: Room[] = [
     shortName: "3",
     description: room3Description,
     fullDescription: room3FullDescription,
-    accentClass: "bg-[#936f45]",
+    accentClass: "bg-copper-600",
     imageUrl: "/rooms/room-3.jpg",
     gallery: [
       "/rooms/room-3.jpg",
@@ -178,7 +178,7 @@ export const rooms: Room[] = [
     shortName: "4",
     description: room4Description,
     fullDescription: room4FullDescription,
-    accentClass: "bg-[#7a6d9c]",
+    accentClass: "bg-plum-600",
     imageUrl: "/rooms/room-4.jpg",
     gallery: [
       "/rooms/room-4.jpg",

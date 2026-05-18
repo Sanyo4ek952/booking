@@ -10,7 +10,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router";
 import { rooms } from "@/entities/room";
 import { formatPrice, getMinimumRoomPrice, getRoomPriceForDate, useBookings } from "@/features/bookings";
@@ -19,10 +19,8 @@ import { isSupabaseConfigured } from "@/shared/api/supabase";
 import { todayInputValue } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
-import { DateRangePicker } from "@/shared/ui/DateRangePicker";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { EnvNotice } from "@/shared/ui/EnvNotice";
-import { NativeSelect } from "@/shared/ui/Form";
 
 const heroBenefits = [
   { icon: Sparkles, title: "Быстрое бронирование" },
@@ -43,17 +41,11 @@ function formatPublicDate(value: string) {
 export function RoomsPage() {
   const { data: bookings = [], isError, error } = useBookings();
   const today = todayInputValue();
-  const [checkIn, setCheckIn] = useState(today);
-  const [checkOut, setCheckOut] = useState(() => format(addDays(parseISO(today), 3), "yyyy-MM-dd"));
-  const [guests, setGuests] = useState("2");
+  const checkIn = today;
+  const checkOut = format(addDays(parseISO(today), 3), "yyyy-MM-dd");
+  const guests = "2";
 
-  const stayNights = useMemo(() => {
-    if (!checkIn || !checkOut) {
-      return 0;
-    }
-
-    return Math.max(0, differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn)));
-  }, [checkIn, checkOut]);
+  const stayNights = Math.max(0, differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn)));
 
   const visibleRooms = useMemo(() => {
     const hasSelectedStay = Boolean(checkIn && checkOut);
@@ -101,9 +93,9 @@ export function RoomsPage() {
 
   return (
     <div className="grid gap-8">
-      <section className="relative z-20 rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(251,247,240,0.9))] p-4 shadow-xl shadow-stone-900/7 sm:p-8">
-        <div className="flex flex-col gap-5">
-          <div className="inline-flex w-fit items-center gap-3 rounded-2xl bg-[#edf7f2] px-4 py-3 text-sage-700">
+      <section className="relative z-20 rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(251,247,240,0.9))] p-4 shadow-xl shadow-stone-900/7 sm:p-6">
+        <div className="flex flex-col gap-4">
+          <div className="inline-flex w-fit items-center gap-3 rounded-2xl bg-sage-50 px-4 py-3 text-sage-700">
             <Users className="h-5 w-5" />
             <div>
               <div className="text-2xl font-semibold">LIVE PREVIEW</div>
@@ -111,22 +103,17 @@ export function RoomsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-6 rounded-[28px] border border-sand-200 bg-white/80 p-4 sm:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-4 rounded-[28px] border border-sand-200 bg-white/80 p-4 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <div className="flex items-center gap-3">
                   <div className="grid h-12 w-12 place-items-center rounded-2xl bg-sage-700 text-white shadow-lg shadow-sage-700/20">
                     <CalendarDays className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xl font-semibold text-graphite-900">Гостевой дом</div>
+                    <div className="text-xl font-semibold text-graphite-900">Reserve</div>
                     <div className="text-sm text-graphite-500">Добро пожаловать</div>
                   </div>
-                </div>
-
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700">
-                  <CalendarDays className="h-4 w-4" />
-                  Номера
                 </div>
               </div>
 
@@ -143,45 +130,11 @@ export function RoomsPage() {
             </div>
 
             <div>
-              <h1 className="text-3xl font-semibold text-graphite-900 sm:text-5xl">Наши номера</h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-graphite-500">
-                Выберите номер и оставьте заявку на проживание онлайн. Гость видит только доступные комнаты, фото, описание и цену за ночь.
+              <h1 className="text-3xl font-semibold text-graphite-900 sm:text-4xl">Наши номера</h1>
+              <p className="mt-2 max-w-2xl text-base leading-7 text-graphite-500">
+                Выберите номер и оставьте заявку на проживание онлайн.
               </p>
             </div>
-
-            <Card id="prices" className="relative z-30 scroll-mt-32 p-3 sm:p-5">
-              <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-graphite-500">Даты проживания</div>
-                  <DateRangePicker
-                    checkIn={checkIn}
-                    checkOut={checkOut}
-                    minDate={today}
-                    compact
-                    className="mt-2"
-                    onChange={({ checkIn: nextCheckIn, checkOut: nextCheckOut }) => {
-                      setCheckIn(nextCheckIn);
-                      setCheckOut(nextCheckOut);
-                    }}
-                  />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-graphite-500">Гости</div>
-                  <NativeSelect value={guests} onChange={(event) => setGuests(event.target.value)} className="mt-2">
-                    <option value="1">1 гость</option>
-                    <option value="2">2 гостя</option>
-                    <option value="3">3 гостя</option>
-                    <option value="4">4 гостя</option>
-                  </NativeSelect>
-                </div>
-                <div className="flex items-end">
-                  <Button type="button" className="w-full">
-                    Найти номера
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
           </div>
         </div>
       </section>
@@ -216,7 +169,7 @@ export function RoomsPage() {
                       <h2 className="text-2xl font-semibold text-graphite-900">{room.name}</h2>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          isAvailable ? "bg-[#edf7f2] text-sage-700" : "bg-amber-50 text-amber-700"
+                          isAvailable ? "bg-sage-50 text-sage-700" : "bg-amber-50 text-amber-700"
                         }`}
                       >
                         {isAvailable ? "Свободен" : "Есть пересечение"}

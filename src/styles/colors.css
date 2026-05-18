@@ -1,0 +1,18 @@
+:root {
+  --reserve-color-sand-50: #fbf7f0;
+  --reserve-color-sand-100: #f7efe4;
+  --reserve-color-sand-200: #eadccb;
+  --reserve-color-cream-50: #fffaf3;
+
+  --reserve-color-graphite-900: #20211f;
+  --reserve-color-graphite-700: #3d3e3b;
+  --reserve-color-graphite-500: #6f716b;
+
+  --reserve-color-sage-50: #edf7f2;
+  --reserve-color-sage-600: #477668;
+  --reserve-color-sage-700: #315f54;
+
+  --reserve-color-room-ocean-600: #3f6f9f;
+  --reserve-color-room-copper-600: #936f45;
+  --reserve-color-room-plum-600: #7a6d9c;
+}

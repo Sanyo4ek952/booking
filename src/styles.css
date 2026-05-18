@@ -1,15 +1,21 @@
 @import "tailwindcss";
+@import "./styles/colors.css";
 
 @theme {
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --color-sand-50: #fbf7f0;
-  --color-sand-100: #f7efe4;
-  --color-sand-200: #eadccb;
-  --color-graphite-900: #20211f;
-  --color-graphite-700: #3d3e3b;
-  --color-graphite-500: #6f716b;
-  --color-sage-600: #477668;
-  --color-sage-700: #315f54;
+  --color-sand-50: var(--reserve-color-sand-50);
+  --color-sand-100: var(--reserve-color-sand-100);
+  --color-sand-200: var(--reserve-color-sand-200);
+  --color-cream-50: var(--reserve-color-cream-50);
+  --color-graphite-900: var(--reserve-color-graphite-900);
+  --color-graphite-700: var(--reserve-color-graphite-700);
+  --color-graphite-500: var(--reserve-color-graphite-500);
+  --color-sage-50: var(--reserve-color-sage-50);
+  --color-sage-600: var(--reserve-color-sage-600);
+  --color-sage-700: var(--reserve-color-sage-700);
+  --color-ocean-600: var(--reserve-color-room-ocean-600);
+  --color-copper-600: var(--reserve-color-room-copper-600);
+  --color-plum-600: var(--reserve-color-room-plum-600);
 }
 
 html,
@@ -27,9 +33,9 @@ body {
   min-width: 320px;
   overflow-x: clip;
   background:
-    radial-gradient(circle at top left, rgba(234, 220, 203, 0.8), transparent 34rem),
-    linear-gradient(180deg, #fbf7f0 0%, #f7efe4 52%, #fffaf3 100%);
-  color: #20211f;
+    radial-gradient(circle at top left, color-mix(in srgb, var(--reserve-color-sand-200) 80%, transparent), transparent 34rem),
+    linear-gradient(180deg, var(--reserve-color-sand-50) 0%, var(--reserve-color-sand-100) 52%, var(--reserve-color-cream-50) 100%);
+  color: var(--reserve-color-graphite-900);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -42,7 +48,7 @@ select {
 
 .booking-calendar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #477668 #f7efe4;
+  scrollbar-color: var(--reserve-color-sage-600) var(--reserve-color-sand-100);
 }
 
 .booking-calendar-grid {
@@ -60,10 +66,10 @@ select {
 }
 
 .booking-calendar-scroll::-webkit-scrollbar-track {
-  background: #f7efe4;
+  background: var(--reserve-color-sand-100);
 }
 
 .booking-calendar-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #477668;
+  background: var(--reserve-color-sage-600);
 }

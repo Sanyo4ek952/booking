@@ -148,7 +148,7 @@ export function PublicPage() {
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                    <div className={isNearestCheckIn ? "rounded-md border border-sage-600/15 bg-[#edf7f2] p-2" : "rounded-md bg-white/80 p-2"}>
+                    <div className={isNearestCheckIn ? "rounded-md border border-sage-600/15 bg-sage-50 p-2" : "rounded-md bg-white/80 p-2"}>
                       <div className="text-[10px] font-semibold uppercase text-graphite-500">Ближайший заезд</div>
                       <div className={isNearestCheckIn ? "mt-1 font-semibold text-sage-700" : "mt-1 font-medium text-graphite-900"}>{nearestCheckIn}</div>
                     </div>

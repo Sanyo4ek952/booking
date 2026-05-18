@@ -98,11 +98,11 @@ export function RootLayout() {
       <header className="sticky top-0 z-30 border-b border-sand-200/80 bg-sand-50/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
           <Link to={canAccessAdmin ? "/admin" : "/rooms"} className="flex min-w-0 items-center gap-3">
-            <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-graphite-900 text-white shadow-[0_14px_28px_rgba(32,33,31,0.18)]">
+            <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-sage-700 text-white shadow-lg shadow-sage-700/20">
               <House className="h-6 w-6" />
             </div>
             <div className="min-w-0">
-              <div className="truncate text-lg font-semibold text-graphite-900 sm:text-xl">Гостевой дом</div>
+              <div className="truncate text-lg font-semibold text-graphite-900 sm:text-xl">Reserve</div>
               <div className="flex items-center gap-1 truncate text-sm text-graphite-500">
                 <span>{headerSubtitle}</span>
                 <ChevronDown className="h-4 w-4 shrink-0 text-graphite-400" />

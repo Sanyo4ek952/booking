@@ -15,12 +15,12 @@ import {
 import * as Dialog from "@radix-ui/react-dialog";
 import { ru } from "date-fns/locale";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Banknote, BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight, Users, X } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ArrowLeft, Banknote, BedDouble, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Users, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router";
 import { getSelectedAmenityCategories, roomById, type RoomId } from "@/entities/room";
-import { formatPrice, getMinimumRoomPrice, getRoomPriceForDate } from "@/features/bookings";
-import { isCheckoutAfterCheckin } from "@/features/bookings/model/validation";
+import { formatPrice, getMinimumRoomPrice, getRoomPriceForDate, useBookings } from "@/features/bookings";
+import { bookingOverlaps, isCheckoutAfterCheckin } from "@/features/bookings/model/validation";
 import { createBookingRequest } from "@/shared/api/bookingRequests";
 import { cn } from "@/shared/lib/cn";
 import { dateInputFormat, formatRuDate, todayInputValue } from "@/shared/lib/date";
@@ -84,10 +84,18 @@ function formatGuestOptionLabel(value: number) {
   return `${value} гостей`;
 }
 
+type DetailAccordionSection = {
+  id: string;
+  title: string;
+  icon: "bed" | "check";
+  items: Array<{ id: string; label: string }>;
+};
+
 export function RoomDetailsPage() {
   const { roomId } = useParams();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { data: bookings = [] } = useBookings();
   const room = isRoomId(roomId) ? roomById.get(roomId) ?? null : null;
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [checkIn, setCheckIn] = useState(() => searchParams.get("checkIn") ?? "");
@@ -99,6 +107,7 @@ export function RoomDetailsPage() {
   const [formError, setFormError] = useState("");
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [openDetailSectionId, setOpenDetailSectionId] = useState<string | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(parseISO(todayInputValue())));
   const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const minimumPrice = room ? getMinimumRoomPrice(room.id) : null;
@@ -106,8 +115,90 @@ export function RoomDetailsPage() {
   const stay = room ? calculateStayAmount(room.id, checkIn, checkOut) : { nights: 0, amount: null, hasMissingPrice: false };
   const selectedNightPrice = room && checkIn ? getRoomPriceForDate(room.id, parseISO(checkIn)) : minimumPrice;
   const calendarDays = getDatePickerDays(calendarMonth);
+  const roomBookings = useMemo(
+    () => (room ? bookings.filter((booking) => booking.room_id === room.id && booking.status !== "checked_out") : []),
+    [bookings, room],
+  );
   const selectedAmenityCategories = room ? getSelectedAmenityCategories(room.amenities) : [];
   const hasCustomDetailSections = Boolean(room?.detailSections && room.detailSections.length > 0);
+  const detailAccordionSections = useMemo<DetailAccordionSection[]>(() => {
+    if (!room) {
+      return [];
+    }
+
+    const sections: DetailAccordionSection[] = [];
+
+    if (room.sleepingPlaces && room.sleepingPlaces.length > 0) {
+      sections.push({
+        id: "sleeping-places",
+        title: "РЎРїР°Р»СЊРЅС‹Рµ РјРµСЃС‚Р°",
+        icon: "bed",
+        items: room.sleepingPlaces.map((item) => ({
+          id: item.id,
+          label: `${item.quantity} x ${item.label}`,
+        })),
+      });
+    }
+
+    if (hasCustomDetailSections && room.detailSections) {
+      sections.push(
+        ...room.detailSections.map((section) => ({
+          id: section.id,
+          title: section.title,
+          icon: "check" as const,
+          items: section.items.map((item, index) => ({
+            id: `${section.id}-${index}`,
+            label: item,
+          })),
+        })),
+      );
+      return sections;
+    }
+
+    if (selectedAmenityCategories.length > 0) {
+      sections.push(
+        ...selectedAmenityCategories.map((category) => ({
+          id: category.id,
+          title: category.title,
+          icon: "check" as const,
+          items: category.items.map((amenity) => ({
+            id: amenity.id,
+            label: amenity.label,
+          })),
+        })),
+      );
+      return sections;
+    }
+
+    if (room.amenities.length > 0) {
+      sections.push({
+        id: "amenities",
+        title: "РЈРґРѕР±СЃС‚РІР°",
+        icon: "check",
+        items: room.amenities.map((amenity, index) => ({
+          id: `amenity-${index}`,
+          label: amenity,
+        })),
+      });
+    }
+
+    return sections;
+  }, [hasCustomDetailSections, room, selectedAmenityCategories]);
+  const normalizedDetailAccordionSections = useMemo(
+    () =>
+      detailAccordionSections.map((section) => {
+        if (section.id === "sleeping-places") {
+          return { ...section, title: "\u0421\u043f\u0430\u043b\u044c\u043d\u044b\u0435 \u043c\u0435\u0441\u0442\u0430" };
+        }
+
+        if (section.id === "amenities") {
+          return { ...section, title: "\u0423\u0434\u043e\u0431\u0441\u0442\u0432\u0430" };
+        }
+
+        return section;
+      }),
+    [detailAccordionSections],
+  );
   const guestOptions = Array.from({ length: room?.capacity ?? 1 }, (_, index) => ({
     value: String(index + 1),
     label: formatGuestOptionLabel(index + 1),
@@ -126,10 +217,63 @@ export function RoomDetailsPage() {
     });
   }, [activeImageIndex]);
 
+  useEffect(() => {
+    if (openDetailSectionId && !normalizedDetailAccordionSections.some((section) => section.id === openDetailSectionId)) {
+      setOpenDetailSectionId(null);
+    }
+  }, [normalizedDetailAccordionSections, openDetailSectionId]);
+
+  const isCalendarDayBooked = (day: Date) =>
+    roomBookings.some((booking) => {
+      const checkInDate = parseISO(booking.check_in);
+      const checkOutDate = parseISO(booking.check_out);
+
+      return checkInDate <= day && checkOutDate > day;
+    });
+
+  const isCalendarDayDisabled = (day: Date, context: { checkIn: string; checkOut: string }) => {
+    if (!room) {
+      return true;
+    }
+
+    const dayValue = format(day, dateInputFormat);
+
+    if (!context.checkIn || context.checkOut || dayValue <= context.checkIn) {
+      return isCalendarDayBooked(day);
+    }
+
+    return bookingOverlaps(
+      {
+        room_id: room.id,
+        check_in: context.checkIn,
+        check_out: dayValue,
+      },
+      roomBookings,
+    );
+  };
+
+  const isCheckoutOptionBlocked = (day: Date, context: { checkIn: string; checkOut: string }) => {
+    if (!context.checkIn || context.checkOut) {
+      return false;
+    }
+
+    return !isCalendarDayBooked(day) && isCalendarDayDisabled(day, context);
+  };
+
   const updateDateRange = (selectedDate: Date) => {
     const selectedValue = format(selectedDate, dateInputFormat);
+    const isUnavailable = isCalendarDayDisabled(selectedDate, { checkIn, checkOut });
+    const canRestartSelection = Boolean(isUnavailable && checkIn && !checkOut && selectedValue > checkIn);
 
     setFormError("");
+
+    if (isUnavailable) {
+      if (canRestartSelection) {
+        setCheckIn(selectedValue);
+        setCheckOut("");
+      }
+      return;
+    }
 
     if (!checkIn || checkOut || selectedValue <= checkIn) {
       setCheckIn(selectedValue);
@@ -319,11 +463,75 @@ export function RoomDetailsPage() {
 
             <p className="max-w-3xl text-base leading-7 text-graphite-600">{room.fullDescription}</p>
 
-            {room.sleepingPlaces && room.sleepingPlaces.length > 0 ? (
+            {normalizedDetailAccordionSections.length > 0 ? (
+              <div className="grid gap-3">
+                {normalizedDetailAccordionSections.map((section) => {
+                  const isOpen = openDetailSectionId === section.id;
+
+                  return (
+                    <div
+                      key={section.id}
+                      className={cn(
+                        "overflow-hidden rounded-[24px] border border-white/80 bg-white/55 shadow-sm shadow-stone-900/5 transition-[background-color,box-shadow,border-color] duration-300 ease-out",
+                        isOpen && "bg-white/72 shadow-md shadow-stone-900/8",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors duration-300 ease-out hover:bg-white/35 sm:px-5"
+                        onClick={() => setOpenDetailSectionId((current) => (current === section.id ? null : section.id))}
+                        aria-expanded={isOpen}
+                        aria-controls={`room-detail-section-${section.id}`}
+                      >
+                        <span className="text-xl font-semibold text-graphite-900">{section.title}</span>
+                        <span
+                          className={cn(
+                            "grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sand-100 text-graphite-600 transition-colors duration-300 ease-out",
+                            isOpen && "bg-sage-100 text-sage-700",
+                          )}
+                        >
+                          <ChevronDown className={cn("h-4 w-4 transition-transform duration-300 ease-out", isOpen && "rotate-180")} />
+                        </span>
+                      </button>
+
+                      <div
+                        id={`room-detail-section-${section.id}`}
+                        className={cn(
+                          "grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out",
+                          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                        )}
+                      >
+                        <div className="min-h-0">
+                          <div
+                            className={cn(
+                              "border-t border-white/80 px-4 pt-4 transition-[padding,transform] duration-300 ease-out sm:px-5",
+                              isOpen ? "translate-y-0 pb-4 sm:pb-5" : "-translate-y-1 pb-0",
+                            )}
+                          >
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {section.items.map((item) => (
+                              <div key={item.id} className="flex items-center gap-3 rounded-xl bg-white/70 p-3 text-sm font-medium text-graphite-700 shadow-sm shadow-stone-900/5">
+                                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-sage-700 text-white">
+                                  {section.icon === "bed" ? <BedDouble className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                                </span>
+                                {item.label}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {false && room?.sleepingPlaces?.length ? (
               <div className="grid gap-3">
                 <h2 className="text-xl font-semibold text-graphite-900">Спальные места</h2>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {room.sleepingPlaces.map((item) => (
+                  {room!.sleepingPlaces!.map((item) => (
                     <div key={item.id} className="flex items-center gap-3 rounded-xl bg-white/70 p-3 text-sm font-medium text-graphite-700 shadow-sm shadow-stone-900/5">
                       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-sage-700 text-white">
                         <BedDouble className="h-4 w-4" />
@@ -335,7 +543,7 @@ export function RoomDetailsPage() {
               </div>
             ) : null}
 
-            <div className="grid gap-4">
+            <div className="hidden">
               {hasCustomDetailSections && room.detailSections ? (
                 room.detailSections.map((section) => (
                   <div key={section.id} className="grid gap-3">
@@ -428,6 +636,10 @@ export function RoomDetailsPage() {
                       const isCheckIn = checkIn === dayValue;
                       const isCheckOut = checkOut === dayValue;
                       const isInRange = Boolean(checkIn && checkOut && dayValue > checkIn && dayValue < checkOut);
+                      const isBooked = isCalendarDayBooked(day);
+                      const isDisabled = isCalendarDayDisabled(day, { checkIn, checkOut });
+                      const isCheckoutBlocked = isCheckoutOptionBlocked(day, { checkIn, checkOut });
+                      const canRestartSelection = Boolean(isDisabled && checkIn && !checkOut && dayValue > checkIn);
 
                       return (
                         <button
@@ -435,16 +647,32 @@ export function RoomDetailsPage() {
                           type="button"
                           className={cn(
                             "flex h-12 flex-col items-center justify-center rounded-xl px-1 text-sm font-medium text-graphite-800 transition hover:bg-sand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-600",
-                            !isSameMonth(day, calendarMonth) && "text-graphite-400",
+                            isDisabled && !canRestartSelection && "cursor-not-allowed",
+                            isBooked && "bg-red-50 text-red-700 hover:bg-red-50",
+                            isCheckoutBlocked && "bg-sand-100 text-graphite-500 hover:bg-sand-100",
+                            !isSameMonth(day, calendarMonth) && !isDisabled && "text-graphite-400",
                             isInRange && "bg-sage-50 text-sage-900",
                             (isCheckIn || isCheckOut) && "bg-sage-700 text-white hover:bg-sage-700",
-                            isSameDay(day, new Date()) && !isCheckIn && !isCheckOut && "ring-1 ring-sage-600/30",
+                            isSameDay(day, new Date()) && !isCheckIn && !isCheckOut && !isDisabled && "ring-1 ring-sage-600/30",
                           )}
                           onClick={() => updateDateRange(day)}
-                          title={dayPrice ? `${formatPrice(dayPrice)} ₽ за ночь` : undefined}
+                          title={
+                            isBooked
+                              ? "Дата уже занята"
+                              : isCheckoutBlocked
+                                ? "Недоступно для выбранной даты заезда"
+                                : dayPrice
+                                  ? `${formatPrice(dayPrice)} ₽ за ночь`
+                                  : undefined
+                          }
+                          disabled={isDisabled && !canRestartSelection}
                         >
                           <span>{format(day, "d")}</span>
-                          {dayPrice ? (
+                          {isBooked ? (
+                            <span className="text-[10px] font-semibold leading-none text-red-700">занято</span>
+                          ) : isCheckoutBlocked ? (
+                            <span className="text-[10px] font-semibold leading-none text-graphite-500">нельзя</span>
+                          ) : dayPrice ? (
                             <span
                               className={cn(
                                 "text-[10px] font-semibold leading-none",
