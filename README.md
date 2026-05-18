@@ -34,6 +34,8 @@ npm run dev
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_ADMIN_LOGIN=admin
+VITE_ADMIN_PASSWORD=admin
 ```
 
 Если env-переменные не заданы, приложение покажет понятное сообщение вместо падения.
@@ -77,4 +79,6 @@ src/shared/ui         переиспользуемые UI-компоненты
 
 ## Важное
 
-Админ-страница в этой версии не содержит авторизации и работает через anon key. Для production-доступа замените RLS-политики в `supabase.sql` на доступ только для authenticated/admin-пользователей.
+Для входа в админку используются `VITE_ADMIN_LOGIN` и `VITE_ADMIN_PASSWORD`. После успешного входа сессия сохраняется в `localStorage` текущего браузера и остаётся активной до ручного выхода.
+
+Текущая авторизация защищает интерфейс админки на уровне клиента. Для production-доступа замените RLS-политики в `supabase.sql` на доступ только для authenticated/admin-пользователей и не полагайтесь только на frontend-проверку.

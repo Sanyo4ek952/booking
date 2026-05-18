@@ -1,6 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
+import { AuthProvider } from "@/features/auth/AuthProvider";
+import { RequireAdminAuth } from "@/features/auth/RequireAdminAuth";
 import { AdminPage } from "@/pages/AdminPage";
+import { AdminLoginPage } from "@/pages/AdminLoginPage";
 import { CreateRoomPage } from "@/pages/CreateRoomPage";
 import { PublicPage } from "@/pages/PublicPage";
 import { RoomDetailsPage } from "@/pages/RoomDetailsPage";
@@ -22,12 +25,18 @@ const router = createBrowserRouter([
     path: "/",
     element: <RootLayout />,
     children: [
-      { index: true, element: <Navigate to="/admin" replace /> },
+      { index: true, element: <Navigate to="/rooms" replace /> },
       { path: "rooms", element: <RoomsPage /> },
       { path: "rooms/:roomId", element: <RoomDetailsPage /> },
-      { path: "admin", element: <PublicPage /> },
-      { path: "admin/bookings", element: <AdminPage /> },
-      { path: "admin/rooms/new", element: <CreateRoomPage /> },
+      { path: "admin/login", element: <AdminLoginPage /> },
+      {
+        element: <RequireAdminAuth />,
+        children: [
+          { path: "admin", element: <PublicPage /> },
+          { path: "admin/bookings", element: <AdminPage /> },
+          { path: "admin/rooms/new", element: <CreateRoomPage /> },
+        ],
+      },
     ],
   },
 ]);
@@ -35,9 +44,11 @@ const router = createBrowserRouter([
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

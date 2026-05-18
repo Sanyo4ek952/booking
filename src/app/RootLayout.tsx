@@ -8,10 +8,12 @@ import {
   Globe2,
   House,
   LayoutDashboard,
+  LogOut,
   Plus,
   UserRound,
 } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/Button";
 
@@ -45,7 +47,7 @@ const publicNavItems: NavItem[] = [
     isActive: (pathname) => pathname === "/rooms" || pathname.startsWith("/rooms/"),
   },
   {
-    href: "/admin",
+    href: "/admin/login",
     label: "Админ",
     icon: LayoutDashboard,
     isActive: (pathname) => pathname.startsWith("/admin"),
@@ -53,6 +55,10 @@ const publicNavItems: NavItem[] = [
 ];
 
 function getHeaderSubtitle(pathname: string) {
+  if (pathname === "/admin/login") {
+    return "Авторизация администратора";
+  }
+
   if (pathname === "/admin") {
     return "Управление публичной ссылкой";
   }
@@ -80,16 +86,18 @@ function ScrollToTop() {
 
 export function RootLayout() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  const { isAuthenticated, signOut } = useAuth();
+  const isAdminLoginRoute = location.pathname === "/admin/login";
+  const canAccessAdmin = isAuthenticated && !isAdminLoginRoute;
   const headerSubtitle = getHeaderSubtitle(location.pathname);
-  const navItems = isAdminRoute ? adminNavItems : publicNavItems;
+  const navItems = canAccessAdmin ? adminNavItems : publicNavItems;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(247,239,228,0.92)_45%,rgba(251,247,240,0.88))]">
       <ScrollToTop />
       <header className="sticky top-0 z-30 border-b border-sand-200/80 bg-sand-50/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:px-6 sm:py-4 lg:px-8">
-          <Link to={isAdminRoute ? "/admin" : "/rooms"} className="flex min-w-0 items-center gap-3">
+          <Link to={canAccessAdmin ? "/admin" : "/rooms"} className="flex min-w-0 items-center gap-3">
             <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-graphite-900 text-white shadow-[0_14px_28px_rgba(32,33,31,0.18)]">
               <House className="h-6 w-6" />
             </div>
@@ -103,7 +111,7 @@ export function RootLayout() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {isAdminRoute ? (
+            {canAccessAdmin ? (
               <>
                 <Link
                   to="/rooms"
@@ -119,10 +127,20 @@ export function RootLayout() {
                 >
                   <Bell className="h-5 w-5" />
                 </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Выйти из админки"
+                  onClick={signOut}
+                  className="rounded-full border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)]"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
               </>
             ) : (
               <Link
-                to="/admin"
+                to="/admin/login"
                 className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
                 aria-label="Перейти в админку"
               >
@@ -156,7 +174,7 @@ export function RootLayout() {
             })}
           </nav>
 
-          {isAdminRoute && (
+          {canAccessAdmin && (
             <Button asChild variant="primary" size="sm">
               <Link to="/admin/rooms/new">
                 <Plus className="h-4 w-4" />
