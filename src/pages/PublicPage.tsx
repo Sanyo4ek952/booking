@@ -22,6 +22,14 @@ function getNearestDate(bookings: Booking[], field: "check_in" | "check_out") {
   return nearestBooking ? format(parseISO(nearestBooking[field]), "d MMMM", { locale: ru }) : "—";
 }
 
+function getNearestBooking(bookings: Booking[], field: "check_in" | "check_out") {
+  const today = startOfDay(new Date());
+
+  return bookings
+    .filter((booking) => parseISO(booking[field]) >= today)
+    .sort((left, right) => compareAsc(parseISO(left[field]), parseISO(right[field])))[0];
+}
+
 export function PublicPage() {
   const { toast } = useToast();
   const { data: bookings = [], isLoading, isError, error } = useBookings();
@@ -32,13 +40,19 @@ export function PublicPage() {
 
     return `${window.location.origin}/rooms`;
   }, []);
+  const nearestCheckInBooking = getNearestBooking(bookings, "check_in");
+  const nearestCheckOutBooking = getNearestBooking(bookings, "check_out");
   const roomActualRows = rooms.map((room) => {
     const roomBookings = bookings.filter((booking) => booking.room_id === room.id);
+    const nearestCheckInBookingForRoom = getNearestBooking(roomBookings, "check_in");
+    const nearestCheckOutBookingForRoom = getNearestBooking(roomBookings, "check_out");
 
     return {
       room,
       nearestCheckIn: getNearestDate(roomBookings, "check_in"),
       nearestCheckOut: getNearestDate(roomBookings, "check_out"),
+      isNearestCheckIn: nearestCheckInBooking?.room_id === room.id && nearestCheckInBookingForRoom?.check_in === nearestCheckInBooking?.check_in,
+      isNearestCheckOut: nearestCheckOutBooking?.room_id === room.id && nearestCheckOutBookingForRoom?.check_out === nearestCheckOutBooking?.check_out,
     };
   });
 
@@ -124,7 +138,7 @@ export function PublicPage() {
             </div>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              {roomActualRows.map(({ room, nearestCheckIn, nearestCheckOut }) => (
+              {roomActualRows.map(({ room, nearestCheckIn, nearestCheckOut, isNearestCheckIn, isNearestCheckOut }) => (
                 <div key={room.id} className="rounded-lg border border-sand-200 bg-sand-50/70 p-3">
                   <div className="flex items-center gap-2">
                     <span className={`grid h-8 w-8 place-items-center rounded-md text-sm font-semibold text-white ${room.accentClass}`}>
@@ -134,13 +148,13 @@ export function PublicPage() {
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded-md bg-white/80 p-2">
+                    <div className={isNearestCheckIn ? "rounded-md border border-sage-600/15 bg-[#edf7f2] p-2" : "rounded-md bg-white/80 p-2"}>
                       <div className="text-[10px] font-semibold uppercase text-graphite-500">Ближайший заезд</div>
-                      <div className="mt-1 font-medium text-graphite-900">{nearestCheckIn}</div>
+                      <div className={isNearestCheckIn ? "mt-1 font-semibold text-sage-700" : "mt-1 font-medium text-graphite-900"}>{nearestCheckIn}</div>
                     </div>
-                    <div className="rounded-md bg-white/80 p-2">
+                    <div className={isNearestCheckOut ? "rounded-md border border-red-200 bg-red-50 p-2" : "rounded-md bg-white/80 p-2"}>
                       <div className="text-[10px] font-semibold uppercase text-graphite-500">Ближайший выезд</div>
-                      <div className="mt-1 font-medium text-graphite-900">{nearestCheckOut}</div>
+                      <div className={isNearestCheckOut ? "mt-1 font-semibold text-red-700" : "mt-1 font-medium text-graphite-900"}>{nearestCheckOut}</div>
                     </div>
                   </div>
                 </div>
