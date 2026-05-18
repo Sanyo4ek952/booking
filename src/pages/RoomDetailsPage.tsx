@@ -12,17 +12,22 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
+import * as Dialog from "@radix-ui/react-dialog";
 import { ru } from "date-fns/locale";
-import { ArrowLeft, Banknote, BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Link, Navigate, useParams } from "react-router";
+import { useMutation } from "@tanstack/react-query";
+import { ArrowLeft, Banknote, BedDouble, CalendarDays, Check, ChevronLeft, ChevronRight, Users, X } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, Navigate, useParams, useSearchParams } from "react-router";
 import { getSelectedAmenityCategories, roomById, type RoomId } from "@/entities/room";
 import { formatPrice, getMinimumRoomPrice, getRoomPriceForDate } from "@/features/bookings";
+import { isCheckoutAfterCheckin } from "@/features/bookings/model/validation";
+import { createBookingRequest } from "@/shared/api/bookingRequests";
 import { cn } from "@/shared/lib/cn";
 import { dateInputFormat, formatRuDate, todayInputValue } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
-import { Field, Label } from "@/shared/ui/Form";
+import { Field, FieldError, Input, Label, NativeSelect, Textarea } from "@/shared/ui/Form";
+import { useToast } from "@/shared/ui/useToast";
 
 function isRoomId(value: string | undefined): value is RoomId {
   return value === "room-1" || value === "room-2" || value === "room-3" || value === "room-4";
@@ -67,32 +72,49 @@ function formatDateRange(checkIn: string, checkOut: string) {
   return "Выберите даты заезда и выезда";
 }
 
+function formatGuestOptionLabel(value: number) {
+  if (value === 1) {
+    return "1 гость";
+  }
+
+  if (value >= 2 && value <= 4) {
+    return `${value} гостя`;
+  }
+
+  return `${value} гостей`;
+}
+
 export function RoomDetailsPage() {
   const { roomId } = useParams();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  const room = isRoomId(roomId) ? roomById.get(roomId) ?? null : null;
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
+  const [checkIn, setCheckIn] = useState(() => searchParams.get("checkIn") ?? "");
+  const [checkOut, setCheckOut] = useState(() => searchParams.get("checkOut") ?? "");
+  const [guests, setGuests] = useState(() => searchParams.get("guests") ?? "2");
+  const [guestName, setGuestName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [comment, setComment] = useState("");
+  const [formError, setFormError] = useState("");
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(parseISO(todayInputValue())));
   const thumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  if (!isRoomId(roomId)) {
-    return <Navigate to="/rooms" replace />;
-  }
-
-  const room = roomById.get(roomId);
-
-  if (!room) {
-    return <Navigate to="/rooms" replace />;
-  }
-
-  const minimumPrice = getMinimumRoomPrice(room.id);
-  const gallery = room.gallery.length > 0 ? room.gallery : [room.imageUrl];
-  const stay = calculateStayAmount(room.id, checkIn, checkOut);
-  const selectedNightPrice = checkIn ? getRoomPriceForDate(room.id, parseISO(checkIn)) : minimumPrice;
+  const minimumPrice = room ? getMinimumRoomPrice(room.id) : null;
+  const gallery = room ? (room.gallery.length > 0 ? room.gallery : [room.imageUrl]) : [];
+  const stay = room ? calculateStayAmount(room.id, checkIn, checkOut) : { nights: 0, amount: null, hasMissingPrice: false };
+  const selectedNightPrice = room && checkIn ? getRoomPriceForDate(room.id, parseISO(checkIn)) : minimumPrice;
   const calendarDays = getDatePickerDays(calendarMonth);
-  const selectedAmenityCategories = getSelectedAmenityCategories(room.amenities);
-  const hasCustomDetailSections = Boolean(room.detailSections && room.detailSections.length > 0);
+  const selectedAmenityCategories = room ? getSelectedAmenityCategories(room.amenities) : [];
+  const hasCustomDetailSections = Boolean(room?.detailSections && room.detailSections.length > 0);
+  const guestOptions = Array.from({ length: room?.capacity ?? 1 }, (_, index) => ({
+    value: String(index + 1),
+    label: formatGuestOptionLabel(index + 1),
+  }));
+  const bookingRequestMutation = useMutation({
+    mutationFn: createBookingRequest,
+  });
 
   useEffect(() => {
     const activeThumbnail = thumbnailRefs.current[activeImageIndex];
@@ -106,6 +128,8 @@ export function RoomDetailsPage() {
 
   const updateDateRange = (selectedDate: Date) => {
     const selectedValue = format(selectedDate, dateInputFormat);
+
+    setFormError("");
 
     if (!checkIn || checkOut || selectedValue <= checkIn) {
       setCheckIn(selectedValue);
@@ -124,6 +148,66 @@ export function RoomDetailsPage() {
   const showNextImage = () => {
     setActiveImageIndex((current) => (current === gallery.length - 1 ? 0 : current + 1));
   };
+
+  const handleRequestSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError("");
+
+    if (!room) {
+      setFormError("Не удалось определить объект для заявки.");
+      return;
+    }
+
+    if (!guestName.trim() || !phone.trim()) {
+      setFormError("Укажите имя и телефон для связи.");
+      return;
+    }
+
+    if (!checkIn || !checkOut || !isCheckoutAfterCheckin(checkIn, checkOut)) {
+      setFormError("Выберите корректные даты заезда и выезда.");
+      return;
+    }
+
+    try {
+      const result = await bookingRequestMutation.mutateAsync({
+        room_id: room.id,
+        room_name: room.name,
+        guests: Number(guests),
+        guest_name: guestName.trim(),
+        phone: phone.trim(),
+        check_in: checkIn,
+        check_out: checkOut,
+        nights: stay.nights,
+        amount: stay.amount,
+        nightly_price: selectedNightPrice,
+        comment: comment.trim(),
+        source: "website",
+      });
+
+      const message = "Заявка отправлена. Мы проверим даты и свяжемся с вами.";
+      setGuestName("");
+      setPhone("");
+      setComment("");
+      setIsRequestModalOpen(false);
+
+      toast({
+        title: message,
+        description: result.telegram_sent ? undefined : "Заявка сохранена, но уведомление в Telegram требует проверки на стороне сервера.",
+      });
+    } catch (error) {
+      const description = error instanceof Error ? error.message : "Не удалось отправить заявку.";
+      setFormError(description);
+      toast({
+        title: "Не удалось отправить заявку",
+        description,
+        variant: "error",
+      });
+    }
+  };
+
+  if (!room) {
+    return <Navigate to="/rooms" replace />;
+  }
 
   return (
     <div className="grid gap-6">
@@ -146,10 +230,24 @@ export function RoomDetailsPage() {
 
               {gallery.length > 1 && (
                 <>
-                  <Button type="button" variant="secondary" size="icon" className="absolute left-3 top-1/2 h-9 w-9 -translate-y-1/2 sm:left-4 sm:h-10 sm:w-10" onClick={showPreviousImage} aria-label="Предыдущее фото">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-3 top-1/2 h-9 w-9 -translate-y-1/2 sm:left-4 sm:h-10 sm:w-10"
+                    onClick={showPreviousImage}
+                    aria-label="Предыдущее фото"
+                  >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="secondary" size="icon" className="absolute right-3 top-1/2 h-9 w-9 -translate-y-1/2 sm:right-4 sm:h-10 sm:w-10" onClick={showNextImage} aria-label="Следующее фото">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute right-3 top-1/2 h-9 w-9 -translate-y-1/2 sm:right-4 sm:h-10 sm:w-10"
+                    onClick={showNextImage}
+                    aria-label="Следующее фото"
+                  >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </>
@@ -183,36 +281,63 @@ export function RoomDetailsPage() {
             )}
           </section>
 
-          <section className="grid gap-4">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-wide text-sage-700">Номер</p>
-              <h1 className="mt-2 text-3xl font-semibold text-graphite-900 sm:text-5xl">{room.name}</h1>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-graphite-500">{room.fullDescription}</p>
-            </div>
-
-            <div className="grid gap-5">
-              {room.sleepingPlaces && room.sleepingPlaces.length > 0 ? (
-                <div className="grid gap-3">
+          <section className="grid gap-5 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(251,247,240,0.92))] p-5 shadow-xl shadow-stone-900/6 sm:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-lg ${room.accentClass}`}>
+                    <BedDouble className="h-5 w-5" />
+                  </span>
                   <div>
-                    <h2 className="text-xl font-semibold text-graphite-900">Спальные места</h2>
-                    {room.sleepingPlacesSummary ? <p className="mt-1 text-sm text-graphite-500">{room.sleepingPlacesSummary}</p> : null}
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {room.sleepingPlaces.map((place) => (
-                      <div key={place.id} className="rounded-xl bg-white/70 p-4 text-graphite-700 shadow-sm shadow-stone-900/5">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <BedDouble className="h-4 w-4" />
-                          <span>&times; {place.quantity}</span>
-                        </div>
-                        <div className="mt-2 text-sm font-medium">{place.label}</div>
-                      </div>
-                    ))}
+                    <h1 className="text-3xl font-semibold text-graphite-900 sm:text-4xl">{room.name}</h1>
+                    <p className="text-sm text-graphite-500">Подробности и условия проживания</p>
                   </div>
                 </div>
-              ) : null}
 
-              {hasCustomDetailSections ? (
-                room.detailSections?.map((section) => (
+                <div className="flex flex-wrap gap-2 text-sm text-graphite-600">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-2">
+                    <Users className="h-4 w-4 text-sage-700" />
+                    До {room.capacity} гостей
+                  </span>
+                  {room.sleepingPlacesSummary ? (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-2">
+                      <BedDouble className="h-4 w-4 text-sage-700" />
+                      {room.sleepingPlacesSummary}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white/80 px-4 py-3 text-right shadow-sm">
+                <div className="text-sm text-graphite-500">От</div>
+                <div className="text-2xl font-semibold text-graphite-900">
+                  {minimumPrice ? `${formatPrice(minimumPrice)} ₽` : "—"}
+                </div>
+                <div className="text-xs text-graphite-500">за ночь</div>
+              </div>
+            </div>
+
+            <p className="max-w-3xl text-base leading-7 text-graphite-600">{room.fullDescription}</p>
+
+            {room.sleepingPlaces && room.sleepingPlaces.length > 0 ? (
+              <div className="grid gap-3">
+                <h2 className="text-xl font-semibold text-graphite-900">Спальные места</h2>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {room.sleepingPlaces.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 rounded-xl bg-white/70 p-3 text-sm font-medium text-graphite-700 shadow-sm shadow-stone-900/5">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-sage-700 text-white">
+                        <BedDouble className="h-4 w-4" />
+                      </span>
+                      {item.quantity} x {item.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="grid gap-4">
+              {hasCustomDetailSections && room.detailSections ? (
+                room.detailSections.map((section) => (
                   <div key={section.id} className="grid gap-3">
                     <h2 className="text-xl font-semibold text-graphite-900">{section.title}</h2>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -366,13 +491,109 @@ export function RoomDetailsPage() {
                 <CalendarDays className="h-4 w-4" />
                 {stay.nights > 0 ? `${stay.nights} ночей` : "Даты не выбраны"}
               </div>
-              <div className="mt-3 text-3xl font-semibold">
-                {stay.amount !== null ? `${formatPrice(stay.amount)} ₽` : "—"}
-              </div>
+              <div className="mt-3 text-3xl font-semibold">{stay.amount !== null ? `${formatPrice(stay.amount)} ₽` : "—"}</div>
               {stay.hasMissingPrice && (
                 <p className="mt-2 text-sm leading-6 text-white/70">Для выбранных дат нет цены в сезонной сетке.</p>
               )}
             </div>
+
+            <div className="rounded-2xl border border-sand-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(247,239,228,0.9))] p-4 shadow-sm shadow-stone-900/5">
+              <h3 className="text-lg font-semibold text-graphite-900">Оставить заявку</h3>
+              <p className="mt-1 text-sm leading-6 text-graphite-500">
+                Откроем красивую модалку с формой, где можно подтвердить даты и оставить контакты.
+              </p>
+              <Button type="button" className="mt-4 w-full" onClick={() => setIsRequestModalOpen(true)}>
+                Оставить заявку
+              </Button>
+            </div>
+
+            <Dialog.Root open={isRequestModalOpen} onOpenChange={setIsRequestModalOpen}>
+              <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 z-40 bg-graphite-900/25 backdrop-blur-sm" />
+                <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,560px)] max-h-[calc(100vh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[28px] border border-white/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,246,239,0.96))] p-5 shadow-2xl shadow-stone-900/20 sm:p-6">
+                  <form id="booking-request-form" method="post" className="grid gap-4" onSubmit={handleRequestSubmit}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <Dialog.Title className="text-2xl font-semibold text-graphite-900">Оставить заявку</Dialog.Title>
+                        <Dialog.Description className="mt-2 text-sm leading-6 text-graphite-500">
+                          Подтвердите даты, заполните контакты, и мы отправим заявку владельцу.
+                        </Dialog.Description>
+                      </div>
+                      <Dialog.Close asChild>
+                        <button type="button" className="rounded-full p-2 text-graphite-500 transition hover:bg-sand-100" aria-label="Закрыть">
+                          <X className="h-5 w-5" />
+                        </button>
+                      </Dialog.Close>
+                    </div>
+
+                    <div className="grid gap-3 rounded-2xl bg-white/80 p-4 shadow-sm shadow-stone-900/5 sm:grid-cols-3">
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-[0.12em] text-graphite-500">Даты</div>
+                        <div className="mt-2 text-sm font-semibold text-graphite-900">{formatDateRange(checkIn, checkOut)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-[0.12em] text-graphite-500">Гости</div>
+                        <div className="mt-2 text-sm font-semibold text-graphite-900">{guests}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-[0.12em] text-graphite-500">Стоимость</div>
+                        <div className="mt-2 text-sm font-semibold text-graphite-900">
+                          {stay.amount !== null ? `${formatPrice(stay.amount)} ₽` : "Уточним по запросу"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Field>
+                      <Label htmlFor="request-guests">Гости</Label>
+                      <NativeSelect id="request-guests" value={guests} onChange={(event) => setGuests(event.target.value)}>
+                        {guestOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+
+                    <Field>
+                      <Label htmlFor="request-guest-name">Имя</Label>
+                      <Input id="request-guest-name" value={guestName} onChange={(event) => setGuestName(event.target.value)} placeholder="Иван Петров" />
+                    </Field>
+
+                    <Field>
+                      <Label htmlFor="request-phone">Телефон</Label>
+                      <Input id="request-phone" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+7 900 000-00-00" />
+                    </Field>
+
+                    <Field>
+                      <Label htmlFor="request-comment">Комментарий</Label>
+                      <Textarea
+                        id="request-comment"
+                        value={comment}
+                        onChange={(event) => setComment(event.target.value)}
+                        placeholder="Пожелания по заезду, время приезда, состав гостей"
+                      />
+                    </Field>
+
+                    <FieldError>{formError}</FieldError>
+
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                      <Dialog.Close asChild>
+                        <Button type="button" variant="secondary" className="sm:min-w-32">
+                          Отмена
+                        </Button>
+                      </Dialog.Close>
+                      <Button form="booking-request-form" type="submit" disabled={bookingRequestMutation.isPending} className="sm:min-w-40">
+                        {bookingRequestMutation.isPending ? "Отправляем заявку..." : "Отправить заявку"}
+                      </Button>
+                    </div>
+
+                    <p className="text-xs leading-5 text-graphite-500">
+                      После отправки мы сохраним заявку и свяжемся с вами по указанному телефону.
+                    </p>
+                  </form>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
           </Card>
         </aside>
       </div>

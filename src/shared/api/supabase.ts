@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Booking } from "@/features/bookings/model/types";
+import type { Booking, BookingRequest } from "@/features/bookings/model/types";
 
 export type Database = {
   public: {
@@ -8,6 +8,16 @@ export type Database = {
         Row: Booking;
         Insert: Omit<Booking, "id" | "created_at"> & { id?: string; created_at?: string };
         Update: Partial<Omit<Booking, "id" | "created_at">>;
+        Relationships: [];
+      };
+      booking_requests: {
+        Row: BookingRequest;
+        Insert: Omit<BookingRequest, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Omit<BookingRequest, "id" | "created_at">>;
         Relationships: [];
       };
     };

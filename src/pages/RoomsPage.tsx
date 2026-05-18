@@ -145,7 +145,7 @@ export function RoomsPage() {
             <div>
               <h1 className="text-3xl font-semibold text-graphite-900 sm:text-5xl">Наши номера</h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-graphite-500">
-                Выберите номер и забронируйте проживание онлайн. Гость видит только доступные комнаты, фото, описание и цену за ночь.
+                Выберите номер и оставьте заявку на проживание онлайн. Гость видит только доступные комнаты, фото, описание и цену за ночь.
               </p>
             </div>
 
@@ -264,7 +264,7 @@ export function RoomsPage() {
                   </div>
 
                   <Button asChild className="sm:min-w-44">
-                    <Link to={`/rooms/${room.id}`}>
+                    <Link to={`/rooms/${room.id}?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`}>
                       {isAvailable ? "Выбрать даты" : "Посмотреть номер"}
                       <ChevronRight className="h-4 w-4" />
                     </Link>

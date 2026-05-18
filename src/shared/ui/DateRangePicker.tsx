@@ -1,7 +1,7 @@
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, parseISO, startOfMonth, startOfWeek } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/shared/lib/cn";
 import { dateInputFormat, formatRuDate, todayInputValue } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/Button";
@@ -62,14 +62,6 @@ export function DateRangePicker({
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(parseISO(checkIn || minDate || todayInputValue())));
-
-  useEffect(() => {
-    if (!checkIn) {
-      return;
-    }
-
-    setCalendarMonth(startOfMonth(parseISO(checkIn)));
-  }, [checkIn]);
 
   const calendarDays = useMemo(() => getCalendarDays(calendarMonth), [calendarMonth]);
 
