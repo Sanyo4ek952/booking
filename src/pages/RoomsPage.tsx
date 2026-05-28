@@ -79,7 +79,6 @@ export function RoomsPage() {
           selectedPrice,
         };
       })
-      .filter((room) => room.matchesGuests && (!hasSelectedStay || room.isAvailable))
       .sort((left, right) => Number(right.isAvailable) - Number(left.isAvailable));
   }, [bookings, checkIn, checkOut, guests]);
 
@@ -90,7 +89,7 @@ export function RoomsPage() {
   if (isError) {
     return (
       <EmptyState
-        title="Не удалось загрузить публичную витрину"
+        title="Не удалось загрузить страницу для гостей"
         description={error instanceof Error ? error.message : "Проверьте подключение к Supabase и таблицу бронирований."}
       />
     );
@@ -104,7 +103,7 @@ export function RoomsPage() {
             <Users className="h-5 w-5" />
             <div>
               <div className="text-2xl font-semibold">LIVE PREVIEW</div>
-              <div className="text-sm text-graphite-500">публичная страница для гостей</div>
+              <div className="text-sm text-graphite-500">страница для гостей</div>
             </div>
           </div>
 

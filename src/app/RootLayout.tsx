@@ -27,7 +27,7 @@ type NavItem = {
 const adminNavItems: NavItem[] = [
   {
     href: "/admin",
-    label: "Публичная страница",
+    label: "Страница гостей",
     icon: Globe2,
     isActive: (pathname) => pathname === "/admin",
   },
@@ -60,7 +60,7 @@ function getHeaderSubtitle(pathname: string) {
   }
 
   if (pathname === "/admin") {
-    return "Управление публичной ссылкой";
+    return "Управление ссылкой для гостей";
   }
 
   if (pathname.startsWith("/admin")) {
@@ -71,7 +71,7 @@ function getHeaderSubtitle(pathname: string) {
     return "Карточка номера для гостя";
   }
 
-  return "Публичная витрина для гостей";
+  return "Страница для гостей";
 }
 
 function ScrollToTop() {
@@ -113,27 +113,13 @@ export function RootLayout() {
           <div className="flex items-center gap-2 sm:gap-3">
             {canAccessAdmin ? (
               <>
-                <Link
-                  to="/rooms"
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
-                  aria-label="Открыть публичную страницу"
-                >
-                  <ExternalLink className="h-5 w-5" />
-                </Link>
-                <Link
-                  to="/admin/bookings"
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(32,33,31,0.14)]"
-                  aria-label="Открыть бронирования"
-                >
-                  <Bell className="h-5 w-5" />
-                </Link>
-                <Button
+                  <Button
                   type="button"
                   variant="secondary"
                   size="icon"
                   aria-label="Выйти из админки"
                   onClick={signOut}
-                  className="rounded-full border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)]"
+                  className="rounded-full h-12 w-12 border-sand-200 bg-white/90 text-graphite-900 shadow-[0_10px_24px_rgba(32,33,31,0.08)]"
                 >
                   <LogOut className="h-5 w-5" />
                 </Button>
@@ -185,12 +171,12 @@ export function RootLayout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-3 py-5 pb-28 sm:px-6 sm:py-8 sm:pb-8 lg:px-8">
+      <main className="mx-auto max-w-7xl px-3 py-5 pb-24 sm:px-6 sm:py-8 sm:pb-8 lg:px-8">
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-sand-200/90 bg-sand-50/95 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl sm:hidden">
-        <div className={`mx-auto grid max-w-md gap-1 ${navItems.length === 2 ? "grid-cols-2" : "grid-cols-4"}`}>
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-sand-200/90 bg-sand-50/95 px-3 pb-[calc(0.35rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl sm:hidden">
+        <div className={`mx-auto grid max-w-md gap-0.5 ${navItems.length === 2 ? "grid-cols-2" : "grid-cols-4"}`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.isActive(location.pathname, location.hash);
@@ -200,17 +186,17 @@ export function RootLayout() {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition",
+                  "flex flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10px] font-medium leading-none transition",
                   isActive ? "text-amber-700" : "text-graphite-500 hover:text-graphite-900",
                 )}
               >
                 <div
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-2xl transition",
+                    "flex h-8.5 w-8.5 items-center justify-center rounded-xl transition",
                     isActive && "bg-white shadow-[0_10px_24px_rgba(165,106,44,0.12)]",
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4.5 w-4.5" />
                 </div>
                 <span>{item.label}</span>
               </Link>

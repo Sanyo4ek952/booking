@@ -70,7 +70,7 @@ export function PublicPage() {
           <Card className="p-4 sm:p-5">
             <div className="grid gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-graphite-900">Публичная ссылка</h2>
+                <h2 className="text-lg font-semibold text-graphite-900">Ссылка для гостей</h2>
                 <p className="text-sm text-graphite-500">Скопируйте ссылку и отправьте её гостю для просмотра номеров.</p>
               </div>
 
@@ -86,7 +86,7 @@ export function PublicPage() {
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(publicUrl);
-                      toast({ title: "Ссылка скопирована", description: "Публичную страницу можно отправлять пользователю." });
+                      toast({ title: "Ссылка скопирована", description: "Страницу для гостей можно отправлять пользователю." });
                     } catch {
                       toast({ title: "Не удалось скопировать", description: "Скопируйте ссылку вручную из поля.", variant: "error" });
                     }
